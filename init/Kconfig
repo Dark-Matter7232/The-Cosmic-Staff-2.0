@@ -406,6 +406,7 @@ config VIRT_CPU_ACCOUNTING_GEN
 	bool "Full dynticks CPU time accounting"
 	depends on HAVE_CONTEXT_TRACKING
 	depends on HAVE_VIRT_CPU_ACCOUNTING_GEN
+
 	select VIRT_CPU_ACCOUNTING
 	select CONTEXT_TRACKING
 	help
@@ -436,11 +437,13 @@ config IRQ_TIME_ACCOUNTING
 config SCHED_WALT
         bool "Support window based load tracking"
         depends on SMP
+
         help
         This feature will allow the scheduler to maintain a tunable window
 	based set of metrics for tasks and runqueues. These metrics can be
 	used to guide task placement as well as task frequency requirements
 	for cpufreq governors.
+
 
 config BSD_PROCESS_ACCT
 	bool "BSD Process Accounting"
@@ -552,6 +555,7 @@ config PSI_DEFAULT_DISABLED
 	  Say N if unsure.
 
 endmenu # "CPU/Task time and stats accounting"
+
 
 source "kernel/rcu/Kconfig"
 
@@ -789,6 +793,7 @@ menuconfig CGROUPS
 	  Say N if unsure.
 
 if CGROUPS
+
 
 config PAGE_COUNTER
        bool
@@ -1112,6 +1117,7 @@ config SCHED_TUNE
 	  a boost value and marked as latency-sensitive or not. This option
 	  provides the "schedtune" controller.
 
+
 	  This new controller:
 	  1. allows only a two layers hierarchy, where the root defines the
 	     system-wide boost value and its direct childrens define each one a
@@ -1129,12 +1135,23 @@ config SCHED_TUNE
 config SCHED_EMS
 	bool "Exynos Mobile Scheduler"
 	depends on SMP
+
 	help
 	  This option supports Exynos mobile scheduler. It is designed to
 	  secure the limits of energy aware scheduler. This option provides
 	  features such as independent boosting functinos such as on-time migration,
 	  and prefer_perf and enhanced prefer_idle that work in conjunction with
 	  SCHEDTUNE.
+
+config STUNE_ASSIST
+	bool "SchedTune configuration helper"
+	depends on SCHED_TUNE
+	depends on ANDROID
+	help
+	  This option enables the configuration of default SchedTune
+	  parameters from kernel.
+
+	  If unsure, say N.
 
 config CPUSETS_ASSIST
 	bool "Cpusets configuration helper"
@@ -1206,6 +1223,7 @@ config DEFAULT_USE_ENERGY_AWARE
 	  via sysctl.
 
 	  Say N if unsure.
+
 
 config SIMPLIFIED_ENERGY_MODEL
 	bool "Enable simplified energy model feature"
@@ -1355,9 +1373,12 @@ config LD_DEAD_CODE_DATA_ELIMINATION
 	  own risk.
 
 config SYSCTL
+
 	bool
 
+
 config ANON_INODES
+
 	bool
 
 config HAVE_UID16
@@ -1707,6 +1728,7 @@ config MEMBARRIER
 
 	  If unsure, say Y.
 
+
 config EMBEDDED
 	bool "Embedded system"
 	option allnoconfig_y
@@ -1812,6 +1834,7 @@ config SLUB_MEMCG_SYSFS_ON
 	  to a very high number of debug files being created. This is
 	  controlled by slub_memcg_sysfs boot parameter and this
 	  config option determines the parameter's default value.
+
 
 config COMPAT_BRK
 	bool "Disable heap randomization"
@@ -1942,6 +1965,7 @@ config SYSTEM_DATA_VERIFICATION
 	  trusted keyring to provide public keys.  This then can be used for
 	  module verification, kexec image verification and firmware blob
 	  verification.
+
 
 config PROFILING
 	bool "Profiling support"
@@ -2182,6 +2206,7 @@ config TRIM_UNUSED_KSYMS
 	  binary size.  This might have some security advantages as well.
 
 	  If unsure, or if you need to build out-of-tree modules, say N.
+
 
 endif # MODULES
 
