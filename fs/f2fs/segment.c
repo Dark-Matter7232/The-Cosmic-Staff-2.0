@@ -2839,7 +2839,8 @@ int f2fs_trim_fs(struct f2fs_sb_info *sbi, struct fstrim_range *range)
 	if (is_sbi_flag_set(sbi, SBI_NEED_FSCK)) {
 		f2fs_msg(sbi->sb, KERN_WARNING,
 			"Found FS corruption, run fsck to fix.");
-		return -EIO;
+		err = -EFSCORRUPTED;
+		goto out;
 	}
 
 	/* start/end segment number in main_area */
@@ -4183,7 +4184,7 @@ static int build_sit_entries(struct f2fs_sb_info *sbi)
 					"Wrong journal entry on segno %u",
 					start);
 			set_sbi_flag(sbi, SBI_NEED_FSCK);
-			err = -EINVAL;
+			err = -EFSCORRUPTED;
 			break;
 		}
 
@@ -4227,7 +4228,7 @@ static int build_sit_entries(struct f2fs_sb_info *sbi)
 			"SIT is corrupted node# %u vs %u",
 			total_node_blocks, valid_node_count(sbi));
 		set_sbi_flag(sbi, SBI_NEED_FSCK);
-		err = -EINVAL;
+		err = -EFSCORRUPTED;
 	}
 
 	return err;
@@ -4354,7 +4355,7 @@ out:
 				"segno:%u, type:%u, next_blkoff:%u, blkofs:%u",
 				i, curseg->segno, curseg->alloc_type,
 				curseg->next_blkoff, blkofs);
-			return -EINVAL;
+			return -EFSCORRUPTED;
 		}
 	}
 	return 0;
