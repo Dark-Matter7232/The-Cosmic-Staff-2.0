@@ -3160,6 +3160,7 @@ static int read_raw_super_block(struct f2fs_sb_info *sbi,
 			f2fs_msg(sb, KERN_ERR, "Unable to read %dth superblock",
 				block + 1);
 			err = -EIO;
+			*recovery = 1;
 			continue;
 		}
 
@@ -3172,6 +3173,7 @@ static int read_raw_super_block(struct f2fs_sb_info *sbi,
 			if (verbose)
 				print_bh(sb, bh, 0, sb->s_blocksize);
 			brelse(bh);
+			*recovery = 1;
 			continue;
 		}
 
@@ -3183,10 +3185,6 @@ static int read_raw_super_block(struct f2fs_sb_info *sbi,
 		}
 		brelse(bh);
 	}
-
-	/* Fail to read any one of the superblocks*/
-	if (err < 0)
-		*recovery = 1;
 
 	/* No valid superblock */
 	if (!*raw_super)
