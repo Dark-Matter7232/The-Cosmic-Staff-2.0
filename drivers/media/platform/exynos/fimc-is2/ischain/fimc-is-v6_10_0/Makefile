@@ -5,7 +5,7 @@ obj-$(CONFIG_FIMC_IS_V6_10_0) += fimc-is-hw-chain.o
 ifeq ($(CONFIG_PM_DEVFREQ),y)
 obj-$(CONFIG_FIMC_IS_V6_10_0) += fimc-is-hw-dvfs.o
 endif
-
+CFLAGS_fimc-is-hw-chain.o := $(SIMD_CFLAGS)
 obj-$(CONFIG_FIMC_IS_V6_10_0) += fimc-is-subdev-3aa.o
 obj-$(CONFIG_FIMC_IS_V6_10_0) += fimc-is-subdev-3ac.o
 obj-$(CONFIG_FIMC_IS_V6_10_0) += fimc-is-subdev-3ap.o
