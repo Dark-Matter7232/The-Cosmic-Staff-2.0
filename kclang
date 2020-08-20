@@ -16,4 +16,4 @@ export CCACHE_NOHASHDIR="true"
 export CCACHE_DIR=/mnt/45A15FA43FC33C00/Kernel-Dev/ccache
 export CROSS_COMPILE=aarch64-linux-gnu-
 make O=out M21_defconfig -j$(nproc)
-make O=out savedefconfig -j$(nproc)
+make O=out  -j$(nproc)
