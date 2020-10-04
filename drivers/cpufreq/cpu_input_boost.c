@@ -13,6 +13,7 @@
 #include <linux/moduleparam.h>
 #include <linux/slab.h>
 #include <linux/version.h>
+#include <linux/ems_service.h>
 
 /* The sched_param struct is located elsewhere in newer kernels */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
@@ -29,6 +30,9 @@ static unsigned short wake_boost_duration __read_mostly =
 module_param(max_boost_freq_lp, uint, 0644);
 module_param(max_boost_freq_hp, uint, 0644);
 module_param(wake_boost_duration, short, 0644);
+
+static struct kpp kpp_ta;
+static struct kpp kpp_fg;
 
 enum {
 	SCREEN_OFF,
@@ -108,6 +112,9 @@ static void __cpu_input_boost_kick_max(struct boost_drv *b,
 	} while (atomic_long_cmpxchg(&b->max_boost_expires, curr_expires,
 				     new_expires) != curr_expires);
 
+	kpp_request(STUNE_TOPAPP, &kpp_ta, 1);
+	kpp_request(STUNE_FOREGROUND, &kpp_fg, 1);
+
 	set_bit(MAX_BOOST, &b->state);
 	if (!mod_delayed_work(system_unbound_wq, &b->max_unboost,
 			      boost_jiffies))
@@ -125,6 +132,9 @@ static void max_unboost_worker(struct work_struct *work)
 {
 	struct boost_drv *b = container_of(to_delayed_work(work),
 					   typeof(*b), max_unboost);
+
+	kpp_request(STUNE_TOPAPP, &kpp_ta, 0);
+	kpp_request(STUNE_FOREGROUND, &kpp_fg, 0);
 
 	clear_bit(MAX_BOOST, &b->state);
 	wake_up(&b->boost_waitq);
