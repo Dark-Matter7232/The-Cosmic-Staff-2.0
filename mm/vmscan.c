@@ -52,6 +52,7 @@
 #include <linux/psi.h>
 #include <linux/cpu_input_boost.h>
 #include <linux/devfreq_boost.h>
+#include <linux/ems_service.h>
 
 #include <asm/tlbflush.h>
 #include <asm/div64.h>
@@ -63,6 +64,9 @@
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/vmscan.h>
+
+static struct kpp kpp_ta;
+static struct kpp kpp_fg;
 
 struct scan_control {
 	/* How many pages shrink_list() should reclaim */
@@ -3930,6 +3934,8 @@ void wakeup_kswapd(struct zone *zone, int order, enum zone_type classzone_idx)
 
 	devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 100);
 	cpu_input_boost_kick_max(100);
+	kpp_request(STUNE_TOPAPP, &kpp_ta, 1);
+	kpp_request(STUNE_FOREGROUND, &kpp_fg, 1);
 
 	pgdat = zone->zone_pgdat;
 	pgdat->kswapd_classzone_idx = kswapd_classzone_idx(pgdat,
