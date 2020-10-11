@@ -27,7 +27,7 @@ do {						\
 		pr_info(x);			\
 } while (0)
 
-#define MIF_UTIL		65
+#define MIF_UTIL		80
 
 #define DEFAULT_QMAX_R		0x12
 #define DEFAULT_QMAX_W		0x3
