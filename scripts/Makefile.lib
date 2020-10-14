@@ -59,6 +59,7 @@ multi-objs-y := $(foreach m, $(multi-used-y), $($(m:.o=-objs)) $($(m:.o=-y)))
 multi-objs-m := $(foreach m, $(multi-used-m), $($(m:.o=-objs)) $($(m:.o=-y)))
 multi-objs   := $(multi-objs-y) $(multi-objs-m)
 
+
 # $(subdir-obj-y) is the list of objects in $(obj-y) which uses dir/ to
 # tell kbuild to descend
 subdir-obj-y := $(filter %/built-in.o, $(obj-y))
@@ -89,6 +90,7 @@ multi-objs-y	:= $(addprefix $(obj)/,$(multi-objs-y))
 multi-objs-m	:= $(addprefix $(obj)/,$(multi-objs-m))
 subdir-ym	:= $(addprefix $(obj)/,$(subdir-ym))
 obj-dirs	:= $(addprefix $(obj)/,$(obj-dirs))
+
 
 # These flags are needed for modversions and compiling, so we define them here
 # already
@@ -305,10 +307,10 @@ $(obj)/%.dtb.S: $(obj)/%.dtb
 quiet_cmd_dtc = DTC     $@
 cmd_dtc = mkdir -p $(dir ${dtc-tmp}) ; \
 	$(CPP) $(dtc_cpp_flags) -x assembler-with-cpp $(LINUXINCLUDE) -o $(dtc-tmp) $< ; \
-	$(DTC) -O dtb -o $@ -b 0 -a 4\
+	$(DTC) -q -O dtb -o $@ -b 0 -a 4\
 		$(addprefix -i,$(dir $<) $(DTC_INCLUDE)) $(DTC_FLAGS) \
 		-d $(depfile).dtc.tmp $(dtc-tmp) ; \
-	$(DTC) -O dts -I dtb -o $@.reverse.dts $@ ; \
+	$(DTC) -q -O dts -I dtb -o $@.reverse.dts $@ ; \
 	cat $(depfile).pre.tmp $(depfile).dtc.tmp > $(depfile)
 
 $(obj)/%.dtb: $(src)/%.dts FORCE
