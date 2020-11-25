@@ -675,6 +675,9 @@ config POLLY_CLANG
 
 	  For more information, see Polly's website: https://polly.llvm.org/
 
+config GCC_GRAPHITE
+	bool "Enable GCC's optimizations using the polyhedral model (Graphite)"
+
 config HAVE_ARCH_WITHIN_STACK_FRAMES
 	bool
 	help
