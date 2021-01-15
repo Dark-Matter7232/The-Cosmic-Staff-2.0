@@ -780,6 +780,11 @@ KBUILD_CFLAGS += $(call cc-option, -fcatch-undefined-behavior)
 
 KBUILD_CFLAGS	+= -mcpu=cortex-a73 -mtune=cortex-a73
 
+ifdef CONFIG_INLINE_OPTIMIZATION
+KBUILD_CFLAGS	+= -mllvm -inline-threshold=1000
+KBUILD_CFLAGS	+= -mllvm -inlinehint-threshold=750
+endif
+
 ifdef CONFIG_POLLY_CLANG
 KBUILD_CFLAGS += -mllvm -polly \
 		 -mllvm -polly-run-dce \
