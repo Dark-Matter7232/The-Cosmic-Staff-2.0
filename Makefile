@@ -769,6 +769,10 @@ KBUILD_CFLAGS	+= -mllvm -polly \
 		   -mllvm -polly-vectorizer=stripmine \
 		   -mllvm -polly-invariant-load-hoisting
 endif
+ifdef CONFIG_INLINE_OPTIMIZATION
+KBUILD_CFLAGS	+= -mllvm -inline-threshold=1000
+KBUILD_CFLAGS	+= -mllvm -inlinehint-threshold=750
+endif
 else ifeq ($(cc-name),gcc)
 ifdef CONFIG_GCC_GRAPHITE
 KBUILD_CFLAGS   += -fgraphite-identity
