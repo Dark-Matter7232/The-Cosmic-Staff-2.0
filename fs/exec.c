@@ -2005,6 +2005,12 @@ static int do_execveat_common(int fd, struct filename *filename,
 			current->flags |= PF_PERF_CRITICAL;
 			set_cpus_allowed_ptr(current, cpu_perf_mask);
 		}
+		else if (unlikely(!strncmp(filename->name,
+					   SFLINGER_BIN_PREFIX,
+					   strlen(SFLINGER_BIN_PREFIX)))) {
+			current->flags |= PF_PERF_CRITICAL;
+			set_cpus_allowed_ptr(current, cpu_perf_mask);
+		}
 	}
 
 	/* execve succeeded */
