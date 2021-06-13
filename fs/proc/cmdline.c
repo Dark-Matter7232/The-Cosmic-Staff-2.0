@@ -95,6 +95,16 @@ static void replace_safetynet_flags(char *cmd)
 }
 #endif
 
+
+static bool in_recovery;
+
+static int __init boot_mode_setup(char *value)
+{
+	in_recovery = !strcmp(value, "recovery");
+	return 1;
+}
+__setup("androidboot.mode=", boot_mode_setup);
+
 static int __init proc_cmdline_init(void)
 {
 	strcpy(new_command_line, saved_command_line);
@@ -103,7 +113,8 @@ static int __init proc_cmdline_init(void)
 	 * Remove/replace various flags from command line seen by userspace in order to
 	 * pass SafetyNet CTS check.
 	 */
-	replace_safetynet_flags(new_command_line);
+ 	if (!in_recovery)
+		replace_safetynet_flags(new_command_line);
 #ifdef REMOVE_SAFETYNET_FLAGS
 	remove_safetynet_flags(new_command_line);
 #endif
