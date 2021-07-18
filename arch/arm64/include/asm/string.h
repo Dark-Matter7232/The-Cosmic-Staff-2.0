@@ -38,10 +38,14 @@ extern __kernel_size_t strnlen(const char *, __kernel_size_t);
 extern void *memcpy(void *, const void *, __kernel_size_t);
 extern void *__memcpy(void *, const void *, __kernel_size_t);
 
+extern void *old_memcpy(void *, const void *, __kernel_size_t);
+extern void *old___memcpy(void *, const void *, __kernel_size_t);
+
 #define __HAVE_ARCH_MEMMOVE
 extern void *memmove(void *, const void *, __kernel_size_t);
 extern void *__memmove(void *, const void *, __kernel_size_t);
 
+extern int old_memcmp(const void *, const void *, size_t);
 #define __HAVE_ARCH_MEMCHR
 extern void *memchr(const void *, int, __kernel_size_t);
 
