@@ -778,6 +778,8 @@ KBUILD_CFLAGS += $(call cc-disable-warning, tautological-compare)
 KBUILD_CFLAGS += $(call cc-option, -mno-global-merge,)
 KBUILD_CFLAGS += $(call cc-option, -fcatch-undefined-behavior)
 
+KBUILD_CFLAGS	+= -mcpu=cortex-a73 -mtune=cortex-a73
+
 ifdef CONFIG_POLLY_CLANG
 KBUILD_CFLAGS += -mllvm -polly \
 		 -mllvm -polly-run-dce \
