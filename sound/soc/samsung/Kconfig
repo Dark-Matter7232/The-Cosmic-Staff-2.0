@@ -220,8 +220,6 @@ config SND_SOC_SAMSUNG_VOGUE_CS47L15
         select MFD_CS47L15
         select MADERA_IRQ
         select MADERA_IRQ_CS47L15
-        select REGULATOR_ARIZONA_LDO1
-        select REGULATOR_ARIZONA_MICSUPP
         select EXTCON_MADERA
         select EXTCON_MADERA_INPUT_EVENT
         select SND_SOC_CS47L15
