@@ -1,17 +1,18 @@
 #!/bin/bash
 
-clear
-
 export ARCH=arm64
 export ANDROID_MAJOR_VERSION=r
 export PLATFORM_VERSION=11
-
+export PATH="/home/ichibauer/kernelBuilding/toolchains/protoC/bin:$PATH"
 export KBUILD_BUILD_USER=ichibauer
 export KBUILD_BUILD_HOST=celenkBalap
 
 make clean
 make mrproper
 make distclean
+
+clear
+
 make M21_defconfig
 time make -j$(nproc)
 

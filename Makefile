@@ -313,9 +313,9 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/x86/ -e s/x86_64/x86/ \
 
 export KBUILD_BUILDHOST := $(SUBARCH)
 ARCH		?=arm64
-CROSS_COMPILE	= /home/ichibauer/kernelBuilding/toolchains/aarch64-linux-android-4.9/bin/aarch64-linux-android-
-CC = /home/ichibauer/kernelBuilding/toolchains/cilank/bin/clang
-CLANG_TRIPLE = /home/ichibauer/kernelBuilding/toolchains/protoC/bin/aarch64-linux-gnu-
+CROSS_COMPILE	= aarch64-linux-gnu-
+CC = clang
+CLANG_TRIPLE = $(CROSS_COMPILE)
 
 # Architecture as present in compile.h
 UTS_MACHINE 	:= $(ARCH)
@@ -376,21 +376,19 @@ HOST_LOADLIBES := $(HOST_LFS_LIBS)
 # Make variables (CC, etc...)
 AS		= $(CROSS_COMPILE)as
 LD		= $(CROSS_COMPILE)ld
-LDGOLD		= $(CROSS_COMPILE)ld.gold
-# CC		= $(CROSS_COMPILE)gcc
-# CC		= $(srctree)/prebuilts/clang//host/linux-x86/clang-4639204/bin/clang
+LDGOLD	= $(CROSS_COMPILE)ld.gold
 CPP		= $(CC) -E
-AR		= $(CROSS_COMPILE)ar
-NM		= $(CROSS_COMPILE)nm
-STRIP		= $(CROSS_COMPILE)strip
-OBJCOPY		= $(CROSS_COMPILE)objcopy
-OBJDUMP		= $(CROSS_COMPILE)objdump
+AR		= llvm-ar
+NM		= llvm-nm
+STRIP		= llvm-strip
+OBJCOPY		= llvm-objcopy
+OBJDUMP		= llvm-objdump
 AWK		= awk
 GENKSYMS	= scripts/genksyms/genksyms
 INSTALLKERNEL  := installkernel
 DEPMOD		= /sbin/depmod
 PERL		= perl
-PYTHON		= python
+PYTHON		= python3
 CHECK		= sparse
 
 ifeq ($(CONFIG_EXYNOS_FMP_FIPS),)
@@ -517,7 +515,7 @@ ifeq ($(shell $(srctree)/scripts/clang-android.sh $(CC) $(CLANG_FLAGS)), y)
 $(error "Clang with Android --target detected. Did you specify CLANG_TRIPLE?")
 endif
 GCC_TOOLCHAIN_DIR := $(dir $(shell which $(CROSS_COMPILE)elfedit))
-CLANG_FLAGS	+= --prefix=$(GCC_TOOLCHAIN_DIR)
+CLANG_FLAGS	+= --prefix=$(GCC_TOOLCHAIN_DIR)$(notdir $(CROSS_COMPILE))
 GCC_TOOLCHAIN	:= $(realpath $(GCC_TOOLCHAIN_DIR)/..)
 endif
 ifneq ($(GCC_TOOLCHAIN),)
