@@ -12,6 +12,7 @@
 
 export ARCH=arm64
 export ANDROID_MAJOR_VERSION=r
+export PATH="/home/ichibauer/kernelBuilding/toolchains/protoC/bin:$PATH"
 export PLATFORM_VERSION=11
 export KBUILD_BUILD_USER=$(whoami)
 export KBUILD_BUILD_HOST=$(hostname)
