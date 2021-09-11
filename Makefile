@@ -374,9 +374,9 @@ HOSTLDFLAGS  := $(HOST_LFS_LDFLAGS)
 HOST_LOADLIBES := $(HOST_LFS_LIBS)
 
 # Make variables (CC, etc...)
-AS		= $(CROSS_COMPILE)as
-LD		= $(CROSS_COMPILE)ld
-LDGOLD	= $(CROSS_COMPILE)ld.gold
+AS		= llvm-as
+LD		= ld.lld
+LDGOLD	= lld
 CPP		= $(CC) -E
 AR		= llvm-ar
 NM		= llvm-nm
@@ -388,7 +388,7 @@ GENKSYMS	= scripts/genksyms/genksyms
 INSTALLKERNEL  := installkernel
 DEPMOD		= /sbin/depmod
 PERL		= perl
-PYTHON		= python3
+PYTHON		= python
 CHECK		= sparse
 
 ifeq ($(CONFIG_EXYNOS_FMP_FIPS),)
