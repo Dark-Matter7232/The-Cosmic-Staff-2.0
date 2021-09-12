@@ -17,17 +17,17 @@ export PLATFORM_VERSION=11
 export KBUILD_BUILD_USER=$(whoami)
 export KBUILD_BUILD_HOST=$(hostname)
 
-make distclean
+make O=out distclean
 
 clear
 
-make M21_defconfig
-time make -j$(nproc --all)
+make O=out M21_defconfig
+time make O=out -j$(nproc --all)
 
 cd /home/ichibauer/kernelBuilding/zippy
 rm -f *.zip
 rm -f Image
-cp /home/ichibauer/kernelBuilding/optio/arch/arm64/boot/Image /home/ichibauer/kernelBuilding/zippy/
+cp /home/ichibauer/kernelBuilding/optio/out/arch/arm64/boot/Image /home/ichibauer/kernelBuilding/zippy/
 zip -r9 newKern.zip *
 
 mv newKern.zip /home/ichibauer/kernelBuilding/feenal/
