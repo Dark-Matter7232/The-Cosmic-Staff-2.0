@@ -315,9 +315,9 @@ CCACHE := ccache
 
 export KBUILD_BUILDHOST := $(SUBARCH)
 ARCH		?=arm64
-CROSS_COMPILE	= aarch64-linux-gnu-
+CROSS_COMPILE	?= aarch64-linux-gnu-
 CC = $(CCACHE) clang
-CLANG_TRIPLE = $(CROSS_COMPILE)
+CLANG_TRIPLE ?= $(CROSS_COMPILE)
 
 # Architecture as present in compile.h
 UTS_MACHINE 	:= $(ARCH)
