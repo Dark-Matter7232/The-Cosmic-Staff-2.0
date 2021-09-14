@@ -136,6 +136,7 @@ arch/arm64/boot/Image
 arch/arm64/crypto/sha256-core.S
 arch/arm64/kernel/vdso/vdso.lds
 arch/arm64/kernel/vmlinux.lds
+log.txt
 firmware/abov/*.fw*
 firmware/*.fw*
 firmware/sensorhub/*.fw*

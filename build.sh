@@ -22,7 +22,7 @@ make O=out distclean
 clear
 
 make O=out M21_defconfig
-time make O=out -j$(nproc --all)
+time make O=out -j$(nproc --all) 2>&1 | tee log.txt
 
 cd /home/ichibauer/kernelBuilding/zippy
 rm -f *.zip
