@@ -378,7 +378,7 @@ HOST_LOADLIBES := $(HOST_LFS_LIBS)
 # Make variables (CC, etc...)
 AS		= llvm-as
 LD		= ld.lld
-LDGOLD	= lld
+LDGOLD		= $(CROSS_COMPILE)ld.gold
 CPP		= $(CC) -E
 AR		= llvm-ar
 NM		= llvm-nm
