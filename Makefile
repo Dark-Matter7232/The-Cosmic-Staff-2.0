@@ -316,7 +316,7 @@ CCACHE := ccache
 export KBUILD_BUILDHOST := $(SUBARCH)
 ARCH		?=arm64
 CROSS_COMPILE	?= aarch64-linux-gnu-
-CC = $(CCACHE) clang
+CC = clang
 CLANG_TRIPLE ?= $(CROSS_COMPILE)
 
 # Architecture as present in compile.h
@@ -380,7 +380,7 @@ AS		= llvm-as
 LD		= ld.lld
 LDGOLD	= lld
 CPP		= $(CC) -E
-AR		= $(CCACHE) llvm-ar
+AR		= llvm-ar
 NM		= llvm-nm
 STRIP		= llvm-strip
 OBJCOPY		= llvm-objcopy
