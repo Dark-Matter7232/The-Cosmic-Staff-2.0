@@ -558,44 +558,6 @@ static void wakeup_source_activate(struct wakeup_source *ws)
 	trace_wakeup_source_activate(ws->name, cec);
 }
 
-#ifdef CONFIG_BOEFFLA_WL_BLOCKER
-// AP: Function to check if a wakelock is on the wakelock blocker list
-static bool check_for_block(struct wakeup_source *ws)
-{
-	char wakelock_name[52] = {0};
-	int length;
-
-	// if debug mode on, print every wakelock requested
-	if (wl_blocker_debug)
-		printk("Boeffla WL blocker: %s requested\n", ws->name);
-
-	// if there is no list of wakelocks to be blocked, exit without futher checking
-	if (!wl_blocker_active)
-		return false;
-
-	// check if wakelock is in wake lock list to be blocked
-	if (ws)
-	{
-		// wake lock names handled have maximum length=50 and minimum=1
-		length = strlen(ws->name);
-		if ((length > 50) || (length < 1))
-			return false;
-
-		sprintf(wakelock_name, ";%s;", ws->name);
-
-		if(strstr(list_wl_search, wakelock_name) == NULL)
-			return false;
-	}
-
-	// wake lock is in list, print it if debug mode on
-	if (wl_blocker_debug)
-		printk("Boeffla WL blocker: %s blocked\n", ws->name);
-
-	// finally block it
-	return true;
-}
-#endif
-
 /**
  * wakeup_source_report_event - Report wakeup event using the given source.
  * @ws: Wakeup source to report the event for.
