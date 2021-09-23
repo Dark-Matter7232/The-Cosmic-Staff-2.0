@@ -2,7 +2,7 @@
 
 BUILD_DATE=$(date +"%m-%d-%Y")
 
-TC_DIR="/home/ichibauer/kernelBuilding/toolchains/protoC/bin"
+TC_DIR="/tc/protoC/bin"
 ZIP_DIR="/home/ichibauer/kernelBuilding/zippy"
 IMG_DIR="/home/ichibauer/kernelBuilding/imageyy/AIK-Linux"
 OUT_IMG_DIR="/home/ichibauer/kernelBuilding/optio/out/arch/arm64/boot"
@@ -64,15 +64,18 @@ then
         echo "Zip can be found at ${FINAL_DIR}/${KERNEL_FILE}.zip"
         echo " "
     fi
+
 elif [ $selection == "2" ]
 then
+    IMG_DEFAULT="stock"
+
     echo " "
     cd ${IMG_DIR}
     bash cleanup.sh
     bash unpackimg.sh
     mv ${OUT_IMG_DIR}/Image ${IMG_DIR}/split_img/
-    rm -f split_img/stock.img-kernel
-    mv split_img/Image split_img/stock.img-kernel
+    rm -f split_img/${IMG_DEFAULT}.img-kernel
+    mv split_img/Image split_img/${IMG_DEFAULT}.img-kernel
     bash repackimg.sh
     mv image-new.img ${KERNEL_FILE}.img
     mv ${KERNEL_FILE}.img ${FINAL_DIR}
@@ -98,6 +101,7 @@ then
         echo "Image can be found at ${FINAL_DIR}/${KERNEL_FILE}.img"
         echo " "
     fi
+
 else
     echo " "
     echo "Uh oh . . . "
