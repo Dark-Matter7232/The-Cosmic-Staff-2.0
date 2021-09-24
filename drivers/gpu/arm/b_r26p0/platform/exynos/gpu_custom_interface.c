@@ -25,9 +25,9 @@
 #include "exynos_tmu.h"
 #endif
 
-#ifdef CONFIG_SOC_EXYNOS9610
-#define GPU_MAX_VOLT		950000	/*Max voltage in uV of GPU according last_kmsg log*/
-#define GPU_MIN_VOLT		581250		/*Min voltage in uV of GPU according last_kmsg log*/
+#ifdef CONFIG_SOC_EXYNOS7885
+#define GPU_MAX_VOLT		1150000	/*Max voltage in uV of GPU according last_kmsg log*/
+#define GPU_MIN_VOLT		600000		/*Min voltage in uV of GPU according last_kmsg log*/
 #define GPU_VOLT_STEP		6250
 #else
 #error "Please define gpu voltage ranges for current SoC."
