@@ -56,8 +56,10 @@ then
 
     if [[ $bootToRecovery == "y" || $bootToRecovery == "Y" ]]
     then
+	    COPY_TO_DIR="/sdcard/Download"
+
         cd ${FINAL_DIR}
-        adb push ${KERNEL_FILE}.zip /sdcard/Download
+        adb push ${KERNEL_FILE}.zip ${COPY_TO_DIR}
         adb reboot recovery
     else
         echo " "
