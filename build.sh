@@ -8,6 +8,7 @@ ZIP_DIR="/home/ichibauer/kernelBuilding/zippy"				 # AnyKernel3 directory
 IMG_DIR="/home/ichibauer/kernelBuilding/imageyy/AIK-Linux"               # AIK directory
 OUT_IMG_DIR="/home/ichibauer/kernelBuilding/optio/out/arch/arm64/boot"   # Raw/compiled Image directory
 FINAL_DIR="/home/ichibauer/kernelBuilding/feenal"                        # Where flashable image/zip is stored 
+PUSH_PHONE_DIR="/sdcard/Download"                                        # Preferred phone's directory where backup & zipped kernel image are stored
 
 export ARCH=arm64
 export SUBARCH=arm64
@@ -22,16 +23,27 @@ exitScript()
     exit 1
 }
 
+backupKernel()
+{
+    BACKUP_NAME="boot"
+
+    printf "\n"
+    printf "> Backing up your previous kernel to ${PUSH_PHONE_DIR}/${BACKUP_NAME}.img now . . . \n"
+    printf "\n"
+
+    adb shell su -c dd if=/dev/block/by-name/boot of=${PUSH_PHONE_DIR}/${BACKUP_NAME}.img
+}
+
 checkImage()
 {
     if [ -e ${OUT_IMG_DIR}/Image ]
     then
         printf "\n"
-        printf "Found raw Image/kernel at ${OUT_IMG_DIR}/Image\n"
+        printf "> Found raw Image/kernel at ${OUT_IMG_DIR}/Image\n"
         printf "\n"
     else
         printf "\n"
-        printf "Raw Image/kernel not found; see log.txt for details.\n"
+        printf "> Raw Image/kernel not found; see log.txt for details.\n"
         printf "\n"
 
         exitScript
@@ -42,21 +54,29 @@ packKernel()
 {
     checkImage
 
-    read -p "Zip (1) or Image (2)? " selection
+    read -p "> Zip (1) or Image (2)? " selection
 
     if ! [[ $selection == "1" || $selection == "2" ]]
     then
         printf "\n"
-        printf "Invalid input.\n"
+        printf "> Invalid input.\n"
         printf "\n"
 
         exitScript
     fi
 
     printf "\n"
-    read -p "Enter name (no spaces): " fileName
+    read -p "> Enter name (no spaces): " fileName
+    printf "\n"
 
     KERNEL_FILE=${fileName}-${BUILD_DATE}
+
+    read -p "> [ROOTED DEVICES ONLY] Would you like to backup your previous kernel (y/n)? " backupKernelOrNo
+
+    if [[ $backupKernelOrNo == "y" || $backupKernelOrNo == "Y" ]]
+    then
+        backupKernel
+    fi
 
     if [ $selection == "1" ]
     then
@@ -74,18 +94,18 @@ packKernel()
         mv ${KERNEL_FILE}.zip ${FINAL_DIR}
         
         printf "\n"
-        read -p "Want to reboot to recovery (y/n)? " bootToRecovery
+        read -p "> Want to reboot to recovery (y/n)? " bootToRecovery
 
         if [[ $bootToRecovery == "y" || $bootToRecovery == "Y" ]]
         then
-            COPY_TO_DIR="/sdcard/Download"
-
             cd ${FINAL_DIR}
-            adb push ${KERNEL_FILE}.zip ${COPY_TO_DIR}
+            printf "\n"
+            adb push ${KERNEL_FILE}.zip ${PUSH_PHONE_DIR}
+            printf "\n"
             adb reboot recovery
         else
             printf "\n"
-            printf "Zip can be found at ${FINAL_DIR}/${KERNEL_FILE}.zip\n"
+            printf "> Zip can be found at ${FINAL_DIR}/${KERNEL_FILE}.zip\n"
             printf "\n"
         fi
     elif [ $selection == "2" ]
@@ -106,7 +126,7 @@ packKernel()
         mv ${KERNEL_FILE}.img ${FINAL_DIR}
 
         printf "\n"
-        read -p "Want to flash directly to the phone (y/n)? " flashOrNO
+        read -p "> Want to flash directly to the phone (y/n)? " flashOrNO
 
         if [[ $flashOrNO == "y" || $flashOrNO == "Y" ]]
         then
@@ -114,20 +134,20 @@ packKernel()
             adb reboot download
 
             printf "\n"
-            printf "Booting into download mode . . . \n"
+            printf "> Booting into download mode . . . \n"
 
             sleep 7
 
             printf "\n"
-            printf "Press Enter key to FLASH . . . \n"
+            printf "> Press Enter key to FLASH . . . \n"
             read
-            printf "Press Enter key to FLASH . . . [2] \n"
+            printf "> Press Enter key to FLASH . . . [2] \n"
             read
 
             sudo heimdall flash --BOOT ${KERNEL_FILE}.img
         else
             printf "\n"
-            printf "Image can be found at ${FINAL_DIR}/${KERNEL_FILE}.img\n"
+            printf "> Image can be found at ${FINAL_DIR}/${KERNEL_FILE}.img\n"
             printf "\n"
         fi
     fi
@@ -141,7 +161,7 @@ compileKernel()
 
     if [ -d $(pwd)/out ]
     then
-        read -p "Build clean (y/n)? " cleanOrNo
+        read -p "> Build clean (y/n)? " cleanOrNo
         printf "\n"
         if [[ $cleanOrNo == "y" || $cleanOrNo == "Y" ]]
         then
