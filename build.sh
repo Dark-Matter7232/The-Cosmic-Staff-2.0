@@ -18,11 +18,6 @@ export PLATFORM_VERSION=11
 export KBUILD_BUILD_USER=$(whoami)
 export KBUILD_BUILD_HOST=$(hostname)
 
-exitScript()
-{
-    exit 1
-}
-
 backupKernel()
 {
     BACKUP_NAME="boot"
@@ -46,7 +41,7 @@ checkImage()
         printf "> Raw Image/kernel not found; see log.txt for details.\n"
         printf "\n"
 
-        exitScript
+        exit 1
     fi
 }
 
@@ -62,7 +57,7 @@ packKernel()
         printf "> Invalid input.\n"
         printf "\n"
 
-        exitScript
+        exit 1
     fi
 
     printf "\n"
@@ -152,7 +147,7 @@ packKernel()
         fi
     fi
 
-   exitScript
+   exit 1
 }
 
 compileKernel()
@@ -161,6 +156,7 @@ compileKernel()
 
     if [ -d $(pwd)/out ]
     then
+        printf "\n"
         read -p "> Build clean (y/n)? " cleanOrNo
         printf "\n"
         if [[ $cleanOrNo == "y" || $cleanOrNo == "Y" ]]
