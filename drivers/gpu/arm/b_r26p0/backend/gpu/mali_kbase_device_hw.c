@@ -334,7 +334,7 @@ int kbase_gpu_wait_cache_clean_timeout(struct kbase_device *kbdev,
 	long remaining = msecs_to_jiffies(wait_timeout_ms);
 
 	while (remaining && get_cache_clean_flag(kbdev)) {
-		remaining = wait_event_timeout(kbdev->cache_clean_wait,
+		remaining = wait_event_interruptible_timeout(kbdev->cache_clean_wait,
 					!kbdev->cache_clean_in_progress,
 					remaining);
 	}

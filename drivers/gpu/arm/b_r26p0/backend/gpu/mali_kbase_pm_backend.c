@@ -740,7 +740,7 @@ void kbase_pm_handle_gpu_lost(struct kbase_device *kbdev)
 
 	/* Wait for all threads keeping GPU active to complete */
 	mutex_unlock(&kbdev->pm.lock);
-	wait_event(kbdev->pm.zero_active_count_wait,
+	wait_event_interruptible(kbdev->pm.zero_active_count_wait,
 			kbdev->pm.active_count == 0);
 	mutex_lock(&kbdev->pm.lock);
 

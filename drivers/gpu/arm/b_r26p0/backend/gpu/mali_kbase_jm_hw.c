@@ -848,11 +848,11 @@ void kbase_jm_wait_for_zero_jobs(struct kbase_context *kctx)
 	struct kbase_device *kbdev = kctx->kbdev;
 	unsigned long timeout = msecs_to_jiffies(ZAP_TIMEOUT);
 
-	timeout = wait_event_timeout(kctx->jctx.zero_jobs_wait,
+	timeout = wait_event_interruptible_timeout(kctx->jctx.zero_jobs_wait,
 			kctx->jctx.job_nr == 0, timeout);
 
 	if (timeout != 0)
-		timeout = wait_event_timeout(
+		timeout = wait_event_interruptible_timeout(
 			kctx->jctx.sched_info.ctx.is_scheduled_wait,
 			!kbase_ctx_flag(kctx, KCTX_SCHEDULED),
 			timeout);
