@@ -50,6 +50,7 @@ packKernel()
     checkImage
 
     read -p "> Zip (1) or Image (2)? " selection
+    printf "\n"
 
     if ! [[ $selection == "1" || $selection == "2" ]]
     then
@@ -60,11 +61,7 @@ packKernel()
         exit 1
     fi
 
-    printf "\n"
-    read -p "> Enter name (no spaces): " fileName
-    printf "\n"
-
-    KERNEL_FILE=${fileName}-${BUILD_DATE}
+    KERNEL_FILE=$(git rev-parse --verify --short=8 HEAD)-${BUILD_DATE}
 
     read -p "> [ROOTED DEVICES ONLY] Would you like to backup your previous kernel (y/n)? " backupKernelOrNo
 
