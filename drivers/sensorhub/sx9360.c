@@ -133,17 +133,15 @@ struct sx9360_p {
 	s16 max_normal_diff;
 
 	int debug_count;
-
-#define HALL_IC_LEN 6
-	char hall_ic[HALL_IC_LEN];
+	char hall_ic[6];
 };
 
-static int sx9360_check_hallic_state(char *file_path, char hall_ic_status[HALL_IC_LEN])
+static int sx9360_check_hallic_state(char *file_path, char hall_ic_status[])
 {
 	int iRet = 0;
 	mm_segment_t old_fs;
 	struct file *filep;
-	char hall_sysfs[HALL_IC_LEN];
+	char hall_sysfs[5];
 
 	old_fs = get_fs();
 	set_fs(KERNEL_DS);
@@ -165,7 +163,7 @@ static int sx9360_check_hallic_state(char *file_path, char hall_ic_status[HALL_I
 		set_fs(old_fs);
 		return -EIO;
 	} else {
-		strncpy(hall_ic_status, hall_sysfs, HALL_IC_LEN);
+		strncpy(hall_ic_status, hall_sysfs, sizeof(hall_sysfs));
 	}
 
 	filp_close(filep, current->files);
@@ -928,7 +926,7 @@ static ssize_t sx9360_normal_threshold_show(struct device *dev,
 		break;
 	}
 
-	return snprintf(buf, PAGE_SIZE, "%u,%u\n",
+	return snprintf(buf, PAGE_SIZE, "%lu,%lu\n",
 		(u32)threshold + (u32)hyst, (u32)threshold - (u32)hyst);
 }
 
