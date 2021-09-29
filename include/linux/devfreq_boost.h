@@ -6,6 +6,7 @@
 #define _DEVFREQ_BOOST_H_
 
 #include <linux/devfreq.h>
+#include <linux/types.h>
 
 enum df_device {
 	DEVFREQ_EXYNOS_MIF,
@@ -17,6 +18,7 @@ void devfreq_boost_kick(enum df_device device);
 void devfreq_boost_kick_max(enum df_device device, unsigned int duration_ms);
 void devfreq_boost_kick_wake(enum df_device device);
 void devfreq_register_boost_device(enum df_device device, struct devfreq *df);
+bool df_boost_within_input(unsigned long timeout_ms);
 void devfreq_boost_disable(int disable);
 #else
 static inline
@@ -34,6 +36,10 @@ void devfreq_boost_kick_wake(enum df_device device)
 static inline
 void devfreq_register_boost_device(enum df_device device, struct devfreq *df)
 {
+}
+static inline bool df_boost_within_input(unsigned long timeout_ms)
+{
+	return true;
 }
 static inline
 void devfreq_boost_disable(int disable)
