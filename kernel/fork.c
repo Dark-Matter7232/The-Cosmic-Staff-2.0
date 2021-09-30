@@ -2132,12 +2132,12 @@ long _do_fork(unsigned long clone_flags,
 	int trace = 0;
 	long nr;
 
-	/* Boost DDR bus & CPU to the max for 250 ms when userspace launches an app */
+	/* Boost DDR bus & CPU to the max for 3275 ms when userspace launches an app */
 	if (task_is_zygote(current)) {
 		kpp_request(STUNE_TOPAPP, &kpp_ta, 1);
 		kpp_request(STUNE_FOREGROUND, &kpp_fg, 1);
-		cpu_input_boost_kick_max(250);
-		devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 250);
+		cpu_input_boost_kick_max(3275);
+		devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 3275);
 	}
 
 	/*
