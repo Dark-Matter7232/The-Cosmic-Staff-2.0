@@ -95,6 +95,16 @@ config KPROFILES
 
 	  If in doubt, say N.
 
+if KPROFILES
+
+config KPROFILES_MODE
+	int "KPROFILES mode"
+	default 1
+	help
+	  Simply allows you to set KPROFILES mode in defconfig. Defaulted to 1.
+
+endif
+
 config DUMMY_IRQ
 	tristate "Dummy IRQ handler"
 	default n
