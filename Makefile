@@ -132,7 +132,7 @@ ifneq ($(KBUILD_OUTPUT),)
 # check that the output directory actually exists
 saved-output := $(KBUILD_OUTPUT)
 KBUILD_OUTPUT := $(shell mkdir -p $(KBUILD_OUTPUT) && cd $(KBUILD_OUTPUT) \
-								&& pwd)
+								&& /bin/pwd)
 $(if $(KBUILD_OUTPUT),, \
      $(error failed to create output directory "$(saved-output)"))
 
@@ -310,11 +310,7 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/x86/ -e s/x86_64/x86/ \
 # "make" in the configured kernel build directory always uses that.
 # Default value for CROSS_COMPILE is not to prefix executables
 # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
-
-CCACHE := ccache
-
-export KBUILD_BUILDHOST := $(SUBARCH)
-ARCH		?= arm64
+ARCH		?= $(SUBARCH)
 CROSS_COMPILE	?= $(CONFIG_CROSS_COMPILE:"%"=%)
 
 # Architecture as present in compile.h
@@ -354,7 +350,9 @@ endif
 hdr-arch  := $(SRCARCH)
 
 KCONFIG_CONFIG	?= .config
+KCONFIG_BUILTINCONFIG ?= $(KCONFIG_CONFIG)
 export KCONFIG_CONFIG
+export KCONFIG_BUILTINCONFIG
 
 # SHELL used by kbuild
 CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
@@ -383,7 +381,7 @@ CPP		= $(CC) -E
 ifneq ($(LLVM),)
 CC		= clang
 LD		= ld.lld
-LDGOLD		= $(CROSS_COMPILE)ld.gold
+LDGOLD		= ld.gold
 AR		= llvm-ar
 NM		= llvm-nm
 OBJCOPY		= llvm-objcopy
@@ -406,7 +404,7 @@ endif
 AWK		= awk
 GENKSYMS	= scripts/genksyms/genksyms
 INSTALLKERNEL  := installkernel
-DEPMOD		= depmod
+DEPMOD		= /sbin/depmod
 PERL		= perl
 PYTHON		= python
 CHECK		= sparse
@@ -416,11 +414,6 @@ KLZOP		= lzop
 LZMA		= lzma
 LZ4		= lz4c
 XZ		= xz
-
-ifeq ($(CONFIG_EXYNOS_FMP_FIPS),)
-READELF        = $(CROSS_COMPILE)readelf
-export READELF
-endif
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
@@ -449,12 +442,15 @@ LINUXINCLUDE    := \
 		-I$(objtree)/include \
 		$(USERINCLUDE)
 
-KBUILD_AFLAGS   := -D__ASSEMBLY__
+KBUILD_AFLAGS   := -D__ASSEMBLY__ -march=armv8-a+lse
 KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common -fshort-wchar \
-		   -Wno-format-security \
+		   -Werror-implicit-function-declaration \
 		   -w \
+		   -Wno-format-security \
+		   -Xassembler -march=armv8-a+lse \
 		   -std=gnu89
+
 KBUILD_CPPFLAGS := -D__KERNEL__
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
@@ -487,10 +483,12 @@ export MODVERDIR := $(if $(KBUILD_EXTMOD),$(firstword $(KBUILD_EXTMOD))/).tmp_ve
 # Files to ignore in find ... statements
 
 export RCS_FIND_IGNORE := \( -name SCCS -o -name BitKeeper -o -name .svn -o    \
-			  -name CVS -o -name .pc -o -name .hg -o -name .git \) \
+			  -name CVS -o -name .pc -o -name .hg -o -name .git -o \
+			  -name toolchain \) \
 			  -prune -o
 export RCS_TAR_IGNORE := --exclude SCCS --exclude BitKeeper --exclude .svn \
-			 --exclude CVS --exclude .pc --exclude .hg --exclude .git
+			 --exclude CVS --exclude .pc --exclude .hg --exclude .git \
+			 --exclude toolchain
 
 # ===========================================================================
 # Rules shared between *config targets and build targets
@@ -538,11 +536,8 @@ endif
 
 ifeq ($(cc-name),clang)
 ifneq ($(CROSS_COMPILE),)
-CLANG_TRIPLE	?= $(srctree)/prebuilts/clang//host/linux-x86/clang-4639204/bin/aarch64-linux-gnu-
+CLANG_TRIPLE	?= $(CROSS_COMPILE)
 CLANG_FLAGS	+= --target=$(notdir $(CLANG_TRIPLE:%-=%))
-ifeq ($(shell $(srctree)/scripts/clang-android.sh $(CC) $(CLANG_FLAGS)), y)
-$(error "Clang with Android --target detected. Did you specify CLANG_TRIPLE?")
-endif
 GCC_TOOLCHAIN_DIR := $(dir $(shell which $(CROSS_COMPILE)elfedit))
 CLANG_FLAGS	+= --prefix=$(GCC_TOOLCHAIN_DIR)$(notdir $(CROSS_COMPILE))
 GCC_TOOLCHAIN	:= $(realpath $(GCC_TOOLCHAIN_DIR)/..)
@@ -683,6 +678,10 @@ else
 include/config/auto.conf: ;
 endif # $(dot-config)
 
+ifdef CONFIG_CC_WERROR
+  KBUILD_CFLAGS += -Werror
+endif
+
 # For the kernel to actually contain only the needed exported symbols,
 # we have to build modules as well to determine what those symbols are.
 # (this can be evaluated only once include/config/auto.conf has been included)
@@ -714,6 +713,26 @@ LDFLAGS		+= -plugin LLVMgold.so
 LLVM_AR		:= llvm-ar
 LLVM_DIS	:= llvm-dis
 export LLVM_AR LLVM_DIS
+else ifdef CONFIG_LTO_GCC
+LDFLAGS_FINAL_vmlinux := -flto=jobserver -fuse-linker-plugin
+LDFLAGS_FINAL_vmlinux += $(filter -g%, $(KBUILD_CFLAGS))
+LDFLAGS_FINAL_vmlinux += -fno-fat-lto-objects
+LDFLAGS_FINAL_vmlinux += $(call cc-disable-warning,attribute-alias,)
+LDFLAGS_FINAL_vmlinux += -Xassembler -Idrivers/misc/tzdev
+ifdef CONFIG_LTO_DEBUG
+	LDFLAGS_FINAL_vmlinux += -fdump-ipa-cgraph -fdump-ipa-inline-details
+	# add for debugging compiler crashes:
+	# LDFLAGS_FINAL_vmlinux += -dH -save-temps
+endif
+ifdef CONFIG_LTO_CP_CLONE
+	LDFLAGS_FINAL_vmlinux += -fipa-cp-clone
+endif
+LDFLAGS_FINAL_vmlinux += -Wno-lto-type-mismatch -Wno-psabi
+LDFLAGS_FINAL_vmlinux += -Wno-stringop-overflow -flinker-output=nolto-rel
+
+LDFINAL_vmlinux := ${CONFIG_SHELL} ${srctree}/scripts/gcc-ld
+AR		:= $(CROSS_COMPILE)gcc-ar
+NM		:= $(CROSS_COMPILE)gcc-nm
 endif
 
 # The arch Makefile can set ARCH_{CPP,A,C}FLAGS to override the default
@@ -737,6 +756,23 @@ else ifdef CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3
 KBUILD_CFLAGS += -O3
 else ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS += -Os
+endif
+
+ifeq ($(cc-name),clang)
+ifdef CONFIG_LLVM_POLLY
+KBUILD_CFLAGS	+= -mllvm -polly \
+		   -mllvm -polly-run-dce \
+		   -mllvm -polly-run-inliner \
+		   -mllvm -polly-opt-fusion=max \
+		   -mllvm -polly-ast-use-context \
+		   -mllvm -polly-detect-keep-going \
+		   -mllvm -polly-vectorizer=stripmine \
+		   -mllvm -polly-invariant-load-hoisting
+endif
+else ifeq ($(cc-name),gcc)
+ifdef CONFIG_GCC_GRAPHITE
+KBUILD_CFLAGS   += -fgraphite-identity
+endif
 endif
 
 # Tell gcc to never replace conditional load with a non-conditional one
@@ -787,12 +823,6 @@ ifdef CONFIG_CC_STACKPROTECTOR
 endif
 KBUILD_CFLAGS += $(stackp-flag)
 
-ifeq ($(cc-name),gcc)
-ifdef CONFIG_GCC_GRAPHITE
-KBUILD_CFLAGS   += -fgraphite-identity
-endif
-endif
-
 ifeq ($(cc-name),clang)
 KBUILD_CPPFLAGS += $(call cc-option,-Qunused-arguments,)
 KBUILD_CFLAGS += $(call cc-disable-warning, format-invalid-specifier)
@@ -804,24 +834,6 @@ KBUILD_CFLAGS += $(call cc-disable-warning, tautological-compare)
 # source of a reference will be _MergedGlobals and not on of the whitelisted names.
 # See modpost pattern 2
 KBUILD_CFLAGS += $(call cc-option, -mno-global-merge,)
-
-KBUILD_CFLAGS	+= -mcpu=cortex-a73 -mtune=cortex-a73
-
-ifdef CONFIG_INLINE_OPTIMIZATION
-KBUILD_CFLAGS	+= -mllvm -inline-threshold=1000
-KBUILD_CFLAGS	+= -mllvm -inlinehint-threshold=750
-endif
-
-ifdef CONFIG_POLLY_CLANG
-KBUILD_CFLAGS += -mllvm -polly \
-		 -mllvm -polly-run-dce \
-		 -mllvm -polly-run-inliner \
-		 -mllvm -polly-opt-fusion=max \
-		 -mllvm -polly-ast-use-context \
-		 -mllvm -polly-detect-keep-going \
-		 -mllvm -polly-vectorizer=stripmine \
-		 -mllvm -polly-invariant-load-hoisting
-endif
 else
 
 # These warnings generated too much noise in a regular build.
@@ -896,13 +908,23 @@ lto-clang-flags	:= -flto -fvisibility=hidden
 # allow disabling only clang LTO where needed
 DISABLE_LTO_CLANG := -fno-lto -fvisibility=default
 export DISABLE_LTO_CLANG
+else ifdef CONFIG_LTO_GCC
+lto-gcc-flags	:= -flto -fno-fat-lto-objects
+lto-gcc-flags	+= $(call cc-disable-warning,attribute-alias,)
+
+ifdef CONFIG_LTO_CP_CLONE
+lto-gcc-flags	+= -fipa-cp-clone
+endif
+
+DISABLE_LTO_GCC := -fno-lto
+export DISABLE_LTO_GCC
 endif
 
 ifdef CONFIG_LTO
-lto-flags	:= $(lto-clang-flags)
+lto-flags	:= $(lto-clang-flags) $(lto-gcc-flags)
 KBUILD_CFLAGS	+= $(lto-flags)
 
-DISABLE_LTO	:= $(DISABLE_LTO_CLANG)
+DISABLE_LTO	:= $(DISABLE_LTO_CLANG) $(DISABLE_LTO_GCC)
 export DISABLE_LTO
 
 # LDFINAL_vmlinux and LDFLAGS_FINAL_vmlinux can be set to override
@@ -977,7 +999,9 @@ KBUILD_CFLAGS	+= $(call cc-option,-fmerge-constants)
 KBUILD_CFLAGS  += $(call cc-option,-fno-stack-check,)
 
 # conserve stack if available
+ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS   += $(call cc-option,-fconserve-stack)
+endif
 
 # disallow errors like 'EXPORT_GPL(foo);' with missing header
 KBUILD_CFLAGS   += $(call cc-option,-Werror=implicit-int)
@@ -1030,7 +1054,6 @@ ifeq ($(CONFIG_STRIP_ASM_SYMS),y)
 LDFLAGS_vmlinux	+= $(call ld-option, -X,)
 endif
 
-# FINGERPRINT
 USE_SECGETSPF := $(shell echo $(PATH))
 ifneq ($(findstring buildscript/build_common/core/bin, $(USE_SECGETSPF)),)
   ifneq ($(shell secgetspf SEC_PRODUCT_FEATURE_BIOAUTH_CONFIG_FINGERPRINT_TZ), false)
@@ -1304,6 +1327,22 @@ ifneq ($(findstring y,$(shell $(CONFIG_SHELL) \
 endif
 endif
 
+# Disable gcc-specific config options when using a different compiler
+gcc-specific-configs := LTO_GCC
+
+PHONY += check-gcc-specific-options
+check-gcc-specific-options: $(KCONFIG_CONFIG) FORCE
+ifneq ($(cc-name),gcc)
+ifneq ($(findstring y,$(shell $(CONFIG_SHELL) \
+	$(srctree)/scripts/config --file $(KCONFIG_CONFIG) \
+		$(foreach c,$(gcc-specific-configs),-s $(c)))),)
+	@echo WARNING: Disabling gcc-specific options with $(cc-name) >&2
+	$(Q)$(srctree)/scripts/config --file $(KCONFIG_CONFIG) \
+		$(foreach c,$(gcc-specific-configs),-d $(c)) && \
+	$(MAKE) -f $(srctree)/Makefile olddefconfig
+endif
+endif
+
 # Check for CONFIG flags that require compiler support. Abort the build
 # after .config has been processed, but before the kernel build starts.
 #
@@ -1321,6 +1360,21 @@ ifdef CONFIG_LTO_CLANG
   endif
   ifneq ($(call gold-ifversion, -ge, 112000000, y), y)
 	@echo Cannot use CONFIG_LTO_CLANG: requires GNU gold 1.12 or later >&2 && exit 1
+  endif
+else ifdef CONFIG_LTO_GCC
+  ifdef CONFIG_UBSAN
+    ifeq ($(call gcc-ifversion,-lt,0600,y),y)
+	@echo Cannot use CONFIG_LTO_GCC with UBSAN: >= gcc 6.x required >&2 && exit 1
+    endif
+  endif
+  ifeq ($(shell if test `ulimit -n` -lt 4000 ; then echo yes ; fi),yes)
+	@echo File descriptor limit too low. Increase with ulimit -n >&2 && exit 1
+  endif
+  ifeq ($(call gcc-ifversion, -lt, 0500,y),y)
+	@echo Cannot use CONFIG_LTO_GCC: requires gcc 5.0 or later >&2 && exit 1
+  endif
+  ifeq ($(call ld-ifversion,-lt,227000000,y),y)
+	@echo Cannot use CONFIG_LTO_GCC: requires binutils 2.27 or later >&2 && exit 1
   endif
 endif
 # Make sure compiler supports LTO flags
@@ -1541,7 +1595,8 @@ CLEAN_DIRS  += $(MODVERDIR)
 # Directories & files removed with 'make mrproper'
 MRPROPER_DIRS  += include/config usr/include include/generated          \
 		  arch/*/include/generated .tmp_objdiff
-MRPROPER_FILES += .config .config.old .version .old_version \
+MRPROPER_FILES += *.img *.zip *.tar.xz config.json config.info config.[GN]* \
+		  .config .config.old .version .old_version \
 		  Module.symvers tags TAGS cscope* GPATH GTAGS GRTAGS GSYMS \
 		  signing_key.pem signing_key.priv signing_key.x509	\
 		  x509.genkey extra_certificates signing_key.x509.keyid	\
