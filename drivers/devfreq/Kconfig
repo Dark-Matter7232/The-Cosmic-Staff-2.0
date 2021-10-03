@@ -154,6 +154,7 @@ config ARM_EXYNOS9610_BUS_DEVFREQ
 
 config DEVFREQ_BOOST
 	bool "Devfreq Boost"
+	depends on KPROFILES
 	help
 	  Boosts enumerated devfreq devices upon input, and allows for boosting
 	  specific devfreq devices on other custom events. The boost frequencies
