@@ -27,9 +27,9 @@ enum {
 	MAX_BOOST
 };
 
-unsigned long devfreq_boost_freq = CONFIG_DEVFREQ_EXYNOS_MIF_BOOST_FREQ;
-unsigned long devfreq_light_input_boost_freq = CONFIG_DEVFREQ_EXYNOS_MIF_LIGHT_INPUT_BOOST_FREQ;
-unsigned short devfreq_boost_dur = CONFIG_DEVFREQ_INPUT_BOOST_DURATION_MS;
+static unsigned long devfreq_boost_freq = CONFIG_DEVFREQ_EXYNOS_MIF_BOOST_FREQ;
+static unsigned long devfreq_light_input_boost_freq = CONFIG_DEVFREQ_EXYNOS_MIF_LIGHT_INPUT_BOOST_FREQ;
+static unsigned short devfreq_boost_dur = CONFIG_DEVFREQ_INPUT_BOOST_DURATION_MS;
 
 module_param(devfreq_boost_freq, long, 0644);
 module_param(devfreq_light_input_boost_freq, long, 0644);
