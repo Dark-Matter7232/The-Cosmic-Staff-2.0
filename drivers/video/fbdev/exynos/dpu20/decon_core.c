@@ -54,9 +54,10 @@
 #include "./panels/lcd_ctrl.h"
 #include "../../../../dma-buf/sync_debug.h"
 #include "dpp.h"
-#include <linux/devfreq_boost.h>
 #ifdef CONFIG_KPROFILES
+#include <linux/devfreq_boost.h>
 #include <linux/kprofiles.h>
+#include <linux/cpu_input_boost.h>
 #endif
 #if defined(CONFIG_EXYNOS_DISPLAYPORT)
 #include "displayport.h"
@@ -2720,11 +2721,10 @@ static int decon_set_win_config(struct decon_device *decon,
 		{
 			case 2:
 				devfreq_boost_kick(DEVFREQ_EXYNOS_MIF);
-				pr_info("Balanced profile detected! boosting CPU & DDR bus\n");
 				break;
 			case 3:
+				cpu_input_boost_kick_max(60);
 				devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 260);
-				pr_info("Performance profile detected! boosting CPU & DDR bus\n");
 				break;
 			default:
 				pr_info("Battery profile detected! Skipping CPU & DDR bus boosts\n");
@@ -2762,6 +2762,7 @@ static int decon_set_win_config(struct decon_device *decon,
 				devfreq_boost_kick(DEVFREQ_EXYNOS_MIF);
 				break;
 			case 3:
+				cpu_input_boost_kick_max(60);
 				devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 260);
 				break;
 			default:
