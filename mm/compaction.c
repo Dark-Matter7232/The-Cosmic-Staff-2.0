@@ -29,6 +29,9 @@
 #include <linux/cpu_input_boost.h>
 #include <linux/devfreq_boost.h>
 #include <linux/workqueue.h>
+#ifdef CONFIG_KPROFILES
+#include <linux/kprofiles.h>
+#endif
 #include "internal.h"
 
 #ifdef CONFIG_COMPACTION
@@ -2001,8 +2004,18 @@ static void kcompactd_do_work(pg_data_t *pgdat)
 							cc.classzone_idx);
 	count_compact_event(KCOMPACTD_WAKE);
 
-	devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 100);
-	cpu_input_boost_kick_max(100);
+#ifdef CONFIG_KPROFILES
+	switch (active_mode())
+	{
+		case 2:
+			cpu_input_boost_kick_max(100);
+			devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 100);
+			break;
+		case 3:
+			cpu_input_boost_kick_max(260);
+			devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 260);
+	}	
+#endif
 
 	for (zoneid = 0; zoneid <= cc.classzone_idx; zoneid++) {
 		int status;
