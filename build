@@ -25,10 +25,9 @@ backupKernel()
 	BACKUP_NAME="boot"
 
 	printf "\n"
-	printf "> Backing up your previous kernel to ${PUSH_PHONE_DIR}/${BACKUP_NAME}.img now . . . \n"
-	printf "\n"
+	printf " > Backing up your previous kernel to ${PUSH_PHONE_DIR}/${BACKUP_NAME}.img now . . . \n"
 
-	adb shell su -c dd if=/dev/block/by-name/boot of=${PUSH_PHONE_DIR}/${BACKUP_NAME}.img
+	adb shell su -c dd if=/dev/block/by-name/boot of=${PUSH_PHONE_DIR}/${BACKUP_NAME}.img > /dev/null 2>&1
 }
 
 checkImage()
@@ -36,11 +35,11 @@ checkImage()
 	if [ -e ${OUT_IMG_DIR}/Image ]
 	then
 		printf "\n"
-		printf "> Found raw Image/kernel at ${OUT_IMG_DIR}/Image\n"
+		printf " > Found raw Image/kernel at ${OUT_IMG_DIR}/Image\n"
 		printf "\n"
 	else
 		printf "\n"
-		printf "> Raw Image/kernel not found; see log.txt for details.\n"
+		printf " > Raw Image/kernel not found; see log.txt for details.\n"
 		printf "\n"
 
 		exit 1
@@ -51,13 +50,13 @@ packKernel()
 {
 	checkImage
 
-	read -p "> Zip (1) or Image (2)? " selection
+	read -p " > Zip (1) or Image (2)? " selection
 	printf "\n"
 
 	if ! [[ $selection == "1" || $selection == "2" ]]
 	then
 		printf "\n"
-		printf "> Invalid input.\n"
+		printf " > Invalid input.\n"
 		printf "\n"
 
 		exit 1
@@ -65,7 +64,7 @@ packKernel()
 
 	KERNEL_FILE=$(git rev-parse --verify --short=8 HEAD)-${BUILD_DATE}
 
-	read -p "> [ROOTED DEVICES ONLY] Would you like to backup your previous kernel (y/n)? " backupKernelOrNo
+	read -p " > [ROOTED DEVICES ONLY] Would you like to backup your previous kernel (y/n)? " backupKernelOrNo
 
 	if [[ $backupKernelOrNo == "y" || $backupKernelOrNo == "Y" ]]
 	then
@@ -74,7 +73,6 @@ packKernel()
 
 	if [ $selection == "1" ]
 	then
-		printf "\n"
 		cd ${ZIP_DIR}
 
 		rm -f *.zip
@@ -82,66 +80,63 @@ packKernel()
 
 		printf "Optio-\n" | figlet > version
 		echo "<----------------------------------->" >> version
-		echo "- Build date      : ${BUILD_DATE}" >> version
-		echo "- By              : @$(whoami)" >> version
+		echo "- Build date : ${BUILD_DATE}" >> version
+		echo "- By	   : @$(whoami)" >> version
 		echo "<----------------------------------->" >> version
 
 		mv ${OUT_IMG_DIR}/Image ${ZIP_DIR}
-		zip -r9 ${KERNEL_FILE}.zip *
+		zip -r9 ${KERNEL_FILE}.zip * > /dev/null 2>&1
 		mv ${KERNEL_FILE}.zip ${FINAL_DIR}
 
 		printf "\n"
-		read -p "> Want to reboot to recovery (y/n)? " bootToRecovery
+		read -p " > Want to reboot to recovery (y/n)? " bootToRecovery
 
 		if [[ $bootToRecovery == "y" || $bootToRecovery == "Y" ]]
 		then
 			cd ${FINAL_DIR}
+			adb push ${KERNEL_FILE}.zip ${PUSH_PHONE_DIR} > /dev/null 2>&1
 			printf "\n"
-			adb push ${KERNEL_FILE}.zip ${PUSH_PHONE_DIR}
-			printf "\n"
-			adb reboot recovery
+			adb reboot recovery > /dev/null 2>&1
 		else
 	    		printf "\n"
-	    		printf "> Zip can be found at ${FINAL_DIR}/${KERNEL_FILE}.zip\n"
+	    		printf " > Zip can be found at ${FINAL_DIR}/${KERNEL_FILE}.zip\n"
 	    		printf "\n"
 		fi
 	elif [ $selection == "2" ]
     	then
 		IMG_DEFAULT="stock"
-		printf "\n"
 
 		cd ${IMG_DIR}
-		bash cleanup.sh
-		bash unpackimg.sh
+		bash cleanup.sh > /dev/null 2>&1
+		bash unpackimg.sh > /dev/null 2>&1
 
 		mv ${OUT_IMG_DIR}/Image ${IMG_DIR}/split_img/
 		rm -f split_img/${IMG_DEFAULT}.img-kernel
 		mv split_img/Image split_img/${IMG_DEFAULT}.img-kernel
 
-		bash repackimg.sh
+		bash repackimg.sh > /dev/null 2>&1
 		mv image-new.img ${KERNEL_FILE}.img
 		mv ${KERNEL_FILE}.img ${FINAL_DIR}
-
+		
 		printf "\n"
-		read -p "> Want to flash directly to the phone (y/n)? " flashOrNO
+		read -p " > Want to flash directly to the phone (y/n)? " flashOrNO
+		printf "\n"
 
 		if [[ $flashOrNO == "y" || $flashOrNO == "Y" ]]
 		then
 	    		cd ${FINAL_DIR}
-	    		printf "\n"
-	    		printf "> Booting into download mode . . . \n"
+	    		printf " > Booting into download mode . . . \n"
+
+	    		adb reboot download > /dev/null 2>&1
+
 			printf "\n"
-
-	    		adb reboot download
-
-			echo "> Flashing in 12 seconds . . . "
+			printf " > Flashing in 12 seconds . . . \n"
 			printf "\n"
 
 	    		sleep 12
-	    		sudo heimdall flash --BOOT ${KERNEL_FILE}.img
+	    		sudo heimdall flash --BOOT ${KERNEL_FILE}.img > /dev/null 2>&1
 		else
-	    		printf "\n"
-	    		printf "> Image can be found at ${FINAL_DIR}/${KERNEL_FILE}.img\n"
+	    		printf " > Image can be found at ${FINAL_DIR}/${KERNEL_FILE}.img\n"
 	    		printf "\n"
 		fi
     	fi
@@ -156,7 +151,7 @@ compileKernel()
 	if [ -d $(pwd)/out ]
 	then
 		printf "\n"
-		read -p "> Build clean (y/n)? " cleanOrNo
+		read -p " > Build clean (y/n)? " cleanOrNo
 		printf "\n"
 
 		if [[ $cleanOrNo == "y" || $cleanOrNo == "Y" ]]
