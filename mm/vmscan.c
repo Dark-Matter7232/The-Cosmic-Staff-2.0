@@ -50,9 +50,12 @@
 #include <linux/printk.h>
 #include <linux/dax.h>
 #include <linux/psi.h>
+#include <linux/ems_service.h>
+#ifdef CONFIG_KPROFILES
 #include <linux/cpu_input_boost.h>
 #include <linux/devfreq_boost.h>
-#include <linux/ems_service.h>
+#include <linux/kprofiles.h>
+#endif
 
 #include <asm/tlbflush.h>
 #include <asm/div64.h>
@@ -3932,10 +3935,20 @@ void wakeup_kswapd(struct zone *zone, int order, enum zone_type classzone_idx)
 	if (!cpuset_zone_allowed(zone, GFP_KERNEL | __GFP_HARDWALL))
 		return;
 
-	devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 100);
-	cpu_input_boost_kick_max(100);
 	kpp_request(STUNE_TOPAPP, &kpp_ta, 1);
 	kpp_request(STUNE_FOREGROUND, &kpp_fg, 1);
+#ifdef CONFIG_KPROFILES
+	switch (active_mode())
+	{
+		case 2:
+			cpu_input_boost_kick_max(80);
+			devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 80);
+			break;
+		case 3:
+			cpu_input_boost_kick_max(125);
+			devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 125);
+	}
+#endif
 
 	pgdat = zone->zone_pgdat;
 	pgdat->kswapd_classzone_idx = kswapd_classzone_idx(pgdat,
