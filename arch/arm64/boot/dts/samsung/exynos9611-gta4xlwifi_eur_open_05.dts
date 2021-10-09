@@ -21,7 +21,7 @@
 	compatible = "samsung,GTA4XLWIFI EUR OPEN 04A", "samsung,EXYNOS9611";
 
 	dtbo-hw_rev = <7>;
-    dtbo-hw_rev_end = <255>;
+    dtbo-hw_rev_end = <7>;
 
 
 	fragment@model {

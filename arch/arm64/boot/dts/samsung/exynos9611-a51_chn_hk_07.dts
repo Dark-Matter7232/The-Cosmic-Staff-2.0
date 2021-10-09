@@ -192,10 +192,12 @@
 		compatible = "ti,tas2562";
 		reg = <0x4c>;
 		ti,left-channel = <0x4c>;
-		ti,channels = <1>;
+		ti,channels = <1>; /* channel number */
 		ti,reset-gpio = <&gpm0 0 0>;
 		/* ti,irq-gpio = <0 0 0>;  Not connected */
-		ti,bst-clk-src = <1>;
+		ti,bst-clk-src = <1>; /* 0 = Default PLL as source; 1 = Oscillator as source */
+		ti,status-check = <1>; /* Periodic timer to check status; 1 = Enable, 0 = Disable */
+		ti,status-period = <5>; /* Period of the status check timer in seconds */
 		ti,port_id = <0x1000>;
 		ti,re_min = <2621440>;
 		ti,re_max = <5242880>;

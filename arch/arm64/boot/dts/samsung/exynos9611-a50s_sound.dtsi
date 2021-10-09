@@ -336,6 +336,13 @@
 		samsung,area = <1>;
 		samsung,offset = <0x7EF000>;
 	};
+	/delete-node/ ext_bin@6;
+	ext_bin_6: ext_bin@6 {
+		status = "okay";
+		samsung,name = "APTV_AUDIO_SLSI.bin";
+		samsung,area = <1>;
+		samsung,offset = <0x4FAC00>;
+	};
 };
 
 &hsi2c_3 {

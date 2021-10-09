@@ -144,7 +144,7 @@
 				battery,polling_time = <10 30 30 30 3600>;
 
 				battery,temp_table_adc = <306 400 555 647 755 880 1022 1182
-								1358 1551 1770 2001 2239 2479 2705 2911 3111 3277 3413 3544 3606>;
+								1358 1630 1860 2030 2200 2479 2705 2911 3111 3277 3413 3544 3606>;
 				battery,temp_table_data = <900 800 700 650 600 550 500 450
 								400 350 300 250 200 150 100 50 0 (-50) (-100) (-150) (-200)>;
 
@@ -277,6 +277,8 @@
 				battery,siop_hv_charging_limit_current = <1000>;
 
 				battery,input_current_by_siop_20 = <1000>;
+				/* siop, limit charging power */
+				battery,lcp_siop = <20 5000 0 3500>;
 
 				battery,siop_wireless_input_limit_current = <600>;
 				battery,siop_wireless_charging_limit_current = <700>;

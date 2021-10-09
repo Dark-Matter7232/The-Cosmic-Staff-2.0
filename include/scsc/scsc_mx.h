@@ -24,10 +24,6 @@
 /* Used for buffers containing logs that will not be dumped by moredump */
 #define MIFRAMMAN_MEM_POOL_LOGGING 2
 
-#ifdef ANDROID_VERSION
-#define SCSC_SEP_VERSION ANDROID_VERSION
-#endif
-
 struct device;
 struct firmware;
 struct scsc_mx;
@@ -359,6 +355,7 @@ u16 scsc_service_get_alignment(struct scsc_service *service);
 int scsc_service_pm_qos_add_request(struct scsc_service *service, enum scsc_qos_config config);
 int scsc_service_pm_qos_update_request(struct scsc_service *service, enum scsc_qos_config config);
 int scsc_service_pm_qos_remove_request(struct scsc_service *service);
+int scsc_service_set_affinity_cpu(struct scsc_service *service, u8 cpu);
 #endif
 
 /* Return the panic record */
@@ -527,23 +524,5 @@ int mxman_unregister_firmware_notifier(struct notifier_block *nb);
  *  false - enabled, true disabled
  */
 bool mxman_recovery_disabled(void);
-
-/* function to provide string representation of uint8 trigger code */
-static inline const char *scsc_get_trigger_str(int code)
-{
-	switch (code) {
-	case 1:	return "scsc_log_fw_panic";
-	case 2:	return "scsc_log_user";
-	case 3:	return "scsc_log_fw";
-	case 4:	return "scsc_log_dumpstate";
-	case 5:	return "scsc_log_host_wlan";
-	case 6:	return "scsc_log_host_bt";
-	case 7:	return "scsc_log_host_common";
-	case 8:	return "scsc_log_sys_error";
-	case 0:
-	default:
-		return "unknown";
-	}
-};
 
 #endif

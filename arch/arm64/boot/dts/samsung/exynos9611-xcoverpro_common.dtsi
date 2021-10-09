@@ -534,6 +534,7 @@
 					pinctrl-names = "default";
 					pinctrl-0 = <&attn_irq>;
 					novatek,firmware_name = "tsp_novatek/nt36672a_xcoverpro.fw";
+					novatek,firmware_name_new_ic = "tsp_novatek/nt36672a_xcoverpro_4BF245.fw";
 					novatek,irq-gpio = <&gpa0 0 0x2002>;
 					novatek,resolution = <1080 2340>; /* x y */
 					novatek,max_touch_num = <10>;
@@ -541,6 +542,7 @@
 					//novatek,ss_touch_num = <1>;
 					novatek,mp-support-dt;
 					check_fw_project_id;
+					support_dual_fw;
 
 					novatek-mp-criteria-7207@0 {
 						#address-cells = <1>;
@@ -552,8 +554,20 @@
 						short_test_spec = <11380 14000>;
 
 						diff_test_frame = <50>;
+						};
+
+					novatek-mp-criteria-7229@0 {
+						#address-cells = <1>;
+						#size-cells = <0>;
+						compatible = "novatek-mp-criteria-7229";
+
+						/* MP Criteria */
+						open_test_spec = <0 5120>;
+						short_test_spec = <10000 14008>;
+
+						diff_test_frame = <50>;
+						};
 					};
-				};
 			};
 
 			usb_notifier {

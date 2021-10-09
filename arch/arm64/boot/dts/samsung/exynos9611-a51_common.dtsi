@@ -984,24 +984,6 @@
 						};
 					};
 				};
-				boot_device@4 {
-					net_boost,label="WIFI TX";
-					net_boost,node="wlan0";
-					net_boost,table {
-						level_0 {
-							threshold = <100>; /* Mbps */
-							big_min = <1976000>;
-							lit_min = <1326000>;
-							mif = <1014000>;
-						};
-						level_1 {
-							threshold = <200>; /* Mbps */
-							big_min = <2184000>;
-							lit_min = <1534000>;
-							mif = <1352000>;
-						};
-					};
-				};
 			};
 
 			dc_vibrator {

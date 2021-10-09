@@ -4696,6 +4696,11 @@ static int sec_bat_set_property(struct power_supply *psy,
 			psy_do_property("otg", set,
 					POWER_SUPPLY_EXT_PROP_CHARGE_UNO_CONTROL, value);
 			break;
+		case POWER_SUPPLY_EXT_PROP_SRCCAP:
+			if (val->intval)
+				battery->init_src_cap = true;
+			pr_info("%s: set init src cap %d", __func__, battery->init_src_cap);
+			break;
 		default:
 			return -EINVAL;
 		}
@@ -5875,7 +5880,7 @@ static int usb_typec_handle_notification(struct notifier_block *nb,
 		case MUIC_NOTIFY_CMD_ATTACH:
 		case MUIC_NOTIFY_CMD_LOGICALLY_ATTACH:
 			/* Skip notify from MUIC if PDIC is attached already */
-			if (is_pd_wire_type(battery->wire_status)) {
+			if (is_pd_wire_type(battery->wire_status) || battery->init_src_cap) {
 				if (lpcharge) {
 					mutex_unlock(&battery->typec_notylock);
 					return 0;
@@ -5909,6 +5914,7 @@ static int usb_typec_handle_notification(struct notifier_block *nb,
 		}
 		battery->pdic_attach = false;
 		battery->pdic_ps_rdy = false;
+		battery->init_src_cap = false;
 #if defined(CONFIG_AFC_CHARGER_MODE)
 		if (battery->muic_cable_type == ATTACHED_DEV_QC_CHARGER_9V_MUIC ||
 			battery->muic_cable_type == ATTACHED_DEV_QC_CHARGER_ERR_V_MUIC)
@@ -5932,6 +5938,7 @@ static int usb_typec_handle_notification(struct notifier_block *nb,
 		dev_info(battery->dev, "%s: pd_event(%d)\n", __func__,
 			(*(struct pdic_notifier_struct *)usb_typec_info.pd).event);
 #endif
+		battery->init_src_cap = false;
 		if ((*(struct pdic_notifier_struct *)usb_typec_info.pd).event == PDIC_NOTIFY_EVENT_DETACH) {
 			dev_info(battery->dev, "%s: skip pd operation - attach(%d)\n", __func__, usb_typec_info.attach);
 			battery->pdic_attach = false;
