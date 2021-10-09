@@ -8,7 +8,11 @@
 #define _SRVMAN_H
 
 #ifdef CONFIG_ANDROID
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
+#include <scsc/scsc_wakelock.h>
+#else
 #include <linux/wakelock.h>
+#endif
 #endif
 
 #include "scsc/scsc_mx.h"
@@ -36,7 +40,11 @@ struct srvman {
 	struct mutex     error_state_mutex;
 	bool             error;
 #ifdef CONFIG_ANDROID
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
+	struct scsc_wake_lock sm_wake_lock;
+#else
 	struct wake_lock sm_wake_lock;
+#endif
 #endif
 };
 

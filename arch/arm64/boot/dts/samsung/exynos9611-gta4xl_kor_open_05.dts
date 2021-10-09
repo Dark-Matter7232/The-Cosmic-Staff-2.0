@@ -21,7 +21,7 @@
 	compatible = "samsung,GTA4XL KOR OPEN 04A", "samsung,EXYNOS9611";
 
 	dtbo-hw_rev = <7>;
-    dtbo-hw_rev_end = <255>;
+	dtbo-hw_rev_end = <8>;
 
 
 	fragment@model {

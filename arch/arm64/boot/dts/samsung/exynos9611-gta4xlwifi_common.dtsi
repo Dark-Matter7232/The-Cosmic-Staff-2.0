@@ -830,12 +830,12 @@
 				};
 			};
 
-			certify_hall {
+			wacom_hall {
 				status = "okay";
-				compatible = "certify_hall";
+				compatible = "wacom_hall";
 				pinctrl-names = "default";
-				pinctrl-0 = <&certify_hall_irq>;
-				certify_hall,gpio_certify_cover = <&gpa1 1 0>;
+				pinctrl-0 = <&wacom_hall_irq>;
+				wacom_hall,gpio_wacom_cover = <&gpa1 1 0>;
 			};
 
 			nad_balancer {
@@ -958,6 +958,31 @@
 						level_0 {
 							threshold = <0>; /* Mbps */
 							irq_affinity = "enable";
+						};
+					};
+				};
+				
+				boot_device@4 {
+					net_boost,label="WIFI TX";
+					net_boost,node="wlan0";
+					net_boost,table {
+						level_0 {
+							threshold = <100>; /* Mbps */
+							big_min = <1976000>;
+							lit_min = <1326000>;
+							mif = <1014000>;
+						};
+						level_1 {
+							threshold = <150>; /* Mbps */
+							big_min = <2184000>;
+							lit_min = <1534000>;
+							mif = <1352000>;
+						};
+						level_2 {
+							threshold = <200>; /* Mbps */
+							big_min = <2210000>;
+							lit_min = <1638000>;
+							mif = <1352000>;
 						};
 					};
 				};
@@ -1118,7 +1143,7 @@
 		samsung,pin-pud = <0>;
 		samsung,pin-drv = <0>;
 	};
-	certify_hall_irq: certify-hall-irq {
+	wacom_hall_irq: wacom-hall-irq {
 		samsung,pins = "gpa1-1";
 		samsung,pin-function = <0xf>;
 		samsung,pin-pud = <0>;

@@ -29,6 +29,7 @@
 				};
 				dsim_set_panel_power_disable_notaot {
 					type =
+					"delay,msleep",	"40",
 					"gpio,low",	"gpio_lcd_rst",
 					"delay,usleep",	"5000",
 					"gpio,low",	"gpio_buck_en",

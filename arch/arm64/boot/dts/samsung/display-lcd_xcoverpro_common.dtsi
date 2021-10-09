@@ -48,7 +48,8 @@
 					"delay,usleep",	"5000",
 					"gpio,low",	"gpio_blic_on",
 					"delay,usleep",	"5000",
-					"gpio,low",	"gpio_lcd_1p8";
+					"gpio,low",	"gpio_lcd_1p8",
+					"delay,msleep",	"33";
 				};
 				dsim_reset_panel {
 					type =
