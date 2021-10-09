@@ -35,7 +35,7 @@ static struct sap_api sap_mlme = {
 static int sap_mlme_notifier(struct slsi_dev *sdev, unsigned long event)
 {
 	int i;
-#if defined(CONFIG_SLSI_WLAN_STA_FWD_BEACON) && (defined(SCSC_SEP_VERSION) && SCSC_SEP_VERSION >= 100000)
+#if defined(CONFIG_SLSI_WLAN_STA_FWD_BEACON) && (defined(SCSC_SEP_VERSION) && SCSC_SEP_VERSION >= 10)
 	struct net_device *dev;
 #endif
 #ifdef CONFIG_SCSC_WLAN_FAST_RECOVERY
@@ -70,6 +70,8 @@ static int sap_mlme_notifier(struct slsi_dev *sdev, unsigned long event)
 				ndev_vif = netdev_priv(sdev->netdev[i]);
 				complete_all(&ndev_vif->sig_wait.completion);
 				slsi_scan_cleanup(sdev, sdev->netdev[i]);
+				cancel_work_sync(&ndev_vif->set_multicast_filter_work);
+				cancel_work_sync(&ndev_vif->update_pkt_filter_work);
 #ifdef CONFIG_SCSC_WLAN_FAST_RECOVERY
 /* For level8 use the older panic flow */
 				if (level < SLSI_WIFI_CM_IF_SYSTEM_ERROR_PANIC && ndev_vif->vif_type == FAPI_VIFTYPE_AP)
@@ -117,10 +119,17 @@ static int sap_mlme_notifier(struct slsi_dev *sdev, unsigned long event)
 		break;
 
 	case SCSC_WIFI_SUSPEND:
+		SLSI_MUTEX_LOCK(sdev->device_config_mutex);
+		if (!(sdev->device_config.user_suspend_mode) || (sdev->device_config.host_state & SLSI_HOSTSTATE_LCD_ACTIVE)) {
+			SLSI_WARN(sdev, "SUSPEND but no SETSUSPENDMODE\n");
+			SLSI_INFO(sdev, "UserSuspendMode:%d HostState:%0.2x\n",
+				 sdev->device_config.user_suspend_mode, sdev->device_config.host_state);
+		}
+		SLSI_MUTEX_UNLOCK(sdev->device_config_mutex);
 		break;
 
 	case SCSC_WIFI_RESUME:
-#if defined(CONFIG_SLSI_WLAN_STA_FWD_BEACON) && (defined(SCSC_SEP_VERSION) && SCSC_SEP_VERSION >= 100000)
+#if defined(CONFIG_SLSI_WLAN_STA_FWD_BEACON) && (defined(SCSC_SEP_VERSION) && SCSC_SEP_VERSION >= 10)
 		dev = slsi_get_netdev(sdev, SLSI_NET_INDEX_WLAN);
 		ndev_vif = netdev_priv(dev);
 		SLSI_MUTEX_LOCK(ndev_vif->vif_mutex);
@@ -136,6 +145,13 @@ static int sap_mlme_notifier(struct slsi_dev *sdev, unsigned long event)
 
 		SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
 #endif
+		SLSI_MUTEX_LOCK(sdev->device_config_mutex);
+		if (!(sdev->device_config.user_suspend_mode) || (sdev->device_config.host_state & SLSI_HOSTSTATE_LCD_ACTIVE)) {
+			SLSI_WARN(sdev, "RESUME but no SETSUSPENDMODE\n");
+			SLSI_INFO(sdev, "UserSuspendMode:%d HostState:%0.2x\n",
+				 sdev->device_config.user_suspend_mode, sdev->device_config.host_state);
+		}
+		SLSI_MUTEX_UNLOCK(sdev->device_config_mutex);
 		break;
 #ifdef CONFIG_SCSC_WLAN_FAST_RECOVERY
 	case SCSC_WIFI_SUBSYSTEM_RESET:
@@ -272,18 +288,21 @@ static int slsi_rx_netdev_mlme(struct slsi_dev *sdev, struct net_device *dev, st
 	case MLME_NDP_TERMINATED_IND:
 		slsi_nan_ndp_termination_ind(sdev, dev, skb);
 		break;
+	case MLME_NAN_RANGE_IND:
+		slsi_rx_nan_range_ind(sdev, dev, skb);
+		break;
 #endif
 #ifdef CONFIG_SCSC_WLAN_SAE_CONFIG
 	case MLME_SYNCHRONISED_IND:
 		slsi_rx_synchronised_ind(sdev, dev, skb);
 		break;
 #endif
-#if defined(CONFIG_SLSI_WLAN_STA_FWD_BEACON) && (defined(SCSC_SEP_VERSION) && SCSC_SEP_VERSION >= 100000)
+#if defined(CONFIG_SLSI_WLAN_STA_FWD_BEACON) && (defined(SCSC_SEP_VERSION) && SCSC_SEP_VERSION >= 10)
 	case MLME_BEACON_REPORTING_EVENT_IND:
 		slsi_rx_beacon_reporting_event_ind(sdev, dev, skb);
 		break;
 #endif
-	case MLME_SPARE_3_IND:
+	case MLME_ROAMING_CHANNEL_LIST_IND:
 		slsi_rx_rcl_channel_list_ind(sdev, dev, skb);
 		break;
 #ifdef CONFIG_SCSC_WLAN_ARP_FLOW_CONTROL
@@ -291,6 +310,9 @@ static int slsi_rx_netdev_mlme(struct slsi_dev *sdev, struct net_device *dev, st
 		slsi_rx_send_frame_cfm_async(sdev, dev, skb);
 		break;
 #endif
+	case SAP_DRV_MA_TO_MLME_DELBA_REQ:
+		slsi_rx_ma_to_mlme_delba_req(sdev, dev, skb);
+		break;
 	default:
 		kfree_skb(skb);
 		SLSI_NET_ERR(dev, "Unhandled Ind/Cfm: 0x%.4x\n", id);
@@ -414,7 +436,7 @@ static int sap_mlme_rx_handler(struct slsi_dev *sdev, struct sk_buff *skb)
 		return 0;
 
 	if (fapi_is_ind(skb)) {
-#ifdef CONFIG_SCSC_WIFILOGGER
+#if IS_ENABLED(CONFIG_SCSC_WIFILOGGER)
 		SCSC_WLOG_PKTFATE_LOG_RX_CTRL_FRAME(fapi_get_data(skb), fapi_get_datalen(skb));
 #endif
 
@@ -450,6 +472,7 @@ static int sap_mlme_rx_handler(struct slsi_dev *sdev, struct sk_buff *skb)
 		case MLME_NDP_REQUESTED_IND:
 		case MLME_NDP_RESPONSE_IND:
 		case MLME_NDP_TERMINATED_IND:
+		case MLME_NAN_RANGE_IND:
 			return slsi_rx_enqueue_netdev_mlme(sdev, skb, vif);
 #endif
 		case MLME_RANGE_IND:

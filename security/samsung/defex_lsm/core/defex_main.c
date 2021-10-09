@@ -43,7 +43,7 @@
 
 #ifdef DEFEX_DEPENDING_ON_OEMUNLOCK
 bool boot_state_unlocked __ro_after_init;
-static int __init verifiedboot_state_setup(char *str)
+__visible_for_testing int __init verifiedboot_state_setup(char *str)
 {
 	static const char unlocked[] = "orange";
 
@@ -58,7 +58,7 @@ static int __init verifiedboot_state_setup(char *str)
 __setup("androidboot.verifiedbootstate=", verifiedboot_state_setup);
 
 int warranty_bit __ro_after_init;
-static int __init get_warranty_bit(char *str)
+__visible_for_testing int __init get_warranty_bit(char *str)
 {
 	get_option(&str, &warranty_bit);
 
@@ -89,7 +89,7 @@ __visible_for_testing struct task_struct *get_parent_task(const struct task_stru
 #	define MESSAGE_BUFFER_SIZE 200
 #	define STORED_CREDS_SIZE 100
 
-static void defex_report_violation(const char *violation, uint64_t counter, struct defex_context *dc,
+__visible_for_testing void defex_report_violation(const char *violation, uint64_t counter, struct defex_context *dc,
 	uid_t stored_uid, uid_t stored_fsuid, uid_t stored_egid, int case_num)
 {
 	int usermode_result;
@@ -169,11 +169,21 @@ __visible_for_testing long kill_process_group(struct task_struct *p, int tgid, i
 __visible_for_testing int task_defex_is_secured(struct defex_context *dc)
 {
 	struct file *exe_file = get_dc_process_file(dc);
+	struct task_struct *p = dc->task->group_leader;
 	char *proc_name = get_dc_process_name(dc);
 	int is_secured = 1;
 
 	if (!get_dc_process_dpath(dc))
 		return is_secured;
+
+	if (!strncmp(p->comm, "system_server",  strlen(p->comm))) {
+		return DEFEX_ALLOW;
+	}
+
+	if (!strncmp(p->comm, "ding:background", strlen(p->comm)) \
+		|| !strncmp(p->comm, "android.vending", strlen(p->comm))) {
+		return DEFEX_ALLOW;
+	}
 
 	is_secured = !rules_lookup2(proc_name, feature_ped_exception, exe_file);
 	return is_secured;

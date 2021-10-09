@@ -21,7 +21,7 @@
 / {
 	compatible = "samsung, XCOVERPRO USA OPEN REV01", "samsung,EXYNOS9611";
 	dtbo-hw_rev = <3>;
-	dtbo-hw_rev_end = <255>;
+	dtbo-hw_rev_end = <4>;
 
 	fragment@model {
 		target-path = "/";

@@ -207,7 +207,7 @@ static int slsi_cdev_open(struct inode *inode, struct file *file)
 	file->private_data = client;
 	slsi_procfs_inc_node();
 
-#ifdef CONFIG_SCSC_MXLOGGER
+#if IS_ENABLED(CONFIG_SCSC_MXLOGGER)
 	scsc_service_register_observer(NULL, "udi");
 #endif
 
@@ -261,7 +261,7 @@ static int slsi_cdev_release(struct inode *inode, struct file *filp)
 	kfree(client);
 	slsi_procfs_dec_node();
 
-#ifdef CONFIG_SCSC_MXLOGGER
+#if IS_ENABLED(CONFIG_SCSC_MXLOGGER)
 	scsc_service_unregister_observer(NULL, "udi");
 #endif
 
@@ -1034,14 +1034,14 @@ static int slsi_cdev_create(struct slsi_dev *sdev, struct device *parent)
 		struct slsi_test_dev *uftestdev = (struct slsi_test_dev *)sdev->maxwell_core;
 
 		minor = uftestdev->device_minor_number;
-		if (uf_cdevs[minor])
+		if (minor >= 0 && minor < SLSI_UDI_MINOR_NODES && uf_cdevs[minor])
 			return -EINVAL;
 	}
 #else
 	minor = slsi_get_minor();
 #endif
-	if (minor < 0) {
-		SLSI_ERR(sdev, "no minor numbers available\n");
+	if (minor >= SLSI_UDI_MINOR_NODES || minor < 0) {
+		SLSI_ERR(sdev, "no minor numbers available,minor:%d\n", minor);
 		return -ENOMEM;
 	}
 

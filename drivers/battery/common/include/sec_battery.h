@@ -788,6 +788,7 @@ struct sec_battery_info {
 	bool pdic_attach;
 	bool pdic_ps_rdy;
 	bool hv_pdo;
+	bool init_src_cap;
 	struct pdic_notifier_struct pdic_info;
 	struct sec_bat_pdic_list pd_list;
 #endif

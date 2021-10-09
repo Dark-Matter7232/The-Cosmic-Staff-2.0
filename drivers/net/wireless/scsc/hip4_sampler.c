@@ -26,7 +26,7 @@
 #include <linux/cdev.h>
 #include <linux/device.h>
 #include <scsc/scsc_mx.h>
-#ifdef CONFIG_SCSC_LOG_COLLECTION
+#if IS_ENABLED(CONFIG_SCSC_LOG_COLLECTION)
 #include <scsc/scsc_log_collector.h>
 #endif
 #include <linux/delay.h>
@@ -509,7 +509,7 @@ void hip4_sampler_tcp_decode(struct slsi_dev *sdev, struct net_device *dev, u8 *
 	slsi_spinlock_unlock(&ndev_vif->tcp_ack_lock);
 }
 
-#ifdef CONFIG_SCSC_LOG_COLLECTION
+#if IS_ENABLED(CONFIG_SCSC_LOG_COLLECTION)
 int hip4_collect_init(struct scsc_log_collector_client *collect_client)
 {
 	/* Stop Sampling */
@@ -552,6 +552,8 @@ int hip4_collect(struct scsc_log_collector_client *collect_client, size_t size)
 			header.platform = SCSC_HIP4_SAMPLER_EXYNOS9630;
 #elif defined(CONFIG_SOC_EXYNOS9610)
 			header.platform = SCSC_HIP4_SAMPLER_EXYNOS9610;
+#elif defined(CONFIG_SOC_EXYNOS7885)
+			header.platform = SCSC_HIP4_SAMPLER_EXYNOS7885;
 #else
 			header.platform = SCSC_HIP4_SAMPLER_UNDEF;
 #endif
@@ -920,7 +922,7 @@ void hip4_sampler_create(struct slsi_dev *sdev, struct scsc_mx *mx)
 		set_bit(minor, bitmap_hip4_sampler_minor);
 	}
 
-#ifdef CONFIG_SCSC_LOG_COLLECTION
+#if IS_ENABLED(CONFIG_SCSC_LOG_COLLECTION)
 	hip4_collect_client.prv = mx;
 	scsc_log_collector_register_client(&hip4_collect_client);
 #endif
@@ -962,7 +964,7 @@ void hip4_sampler_destroy(struct slsi_dev *sdev, struct scsc_mx *mx)
 			hip4_sampler.devs[i].mx = NULL;
 			clear_bit(i, bitmap_hip4_sampler_minor);
 		}
-#ifdef CONFIG_SCSC_LOG_COLLECTION
+#if IS_ENABLED(CONFIG_SCSC_LOG_COLLECTION)
 	scsc_log_collector_unregister_client(&hip4_collect_client);
 #endif
 	class_destroy(hip4_sampler.class_hip4_sampler);

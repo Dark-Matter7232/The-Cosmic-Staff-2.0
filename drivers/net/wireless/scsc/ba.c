@@ -8,6 +8,7 @@
 #include "dev.h"
 #include "ba.h"
 #include "mgt.h"
+#include "sap.h"
 
 /* Timeout (in milliseconds) for frames in MPDU reorder buffer
  *
@@ -18,6 +19,10 @@
 static uint ba_mpdu_reorder_age_timeout = 100; /* 100 milliseconds */
 module_param(ba_mpdu_reorder_age_timeout, uint, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(ba_mpdu_reorder_age_timeout, "Timeout (in ms) before a BA frame in Reorder buffer is passed to upper layers");
+
+static bool ba_out_of_range_delba_enable = 1;
+module_param(ba_out_of_range_delba_enable, bool, S_IRUGO | S_IWUSR);
+MODULE_PARM_DESC(ba_out_of_range_delba_enable, "Option to trigger DELBA on out of range frame (1: enable (default), 0: disable)");
 
 #define BA_WINDOW_BOUNDARY 2048
 
@@ -167,14 +172,46 @@ static void ba_scroll_window(struct net_device *dev,
 	}
 }
 
+static void ba_delete_ba_on_old_frame(struct net_device *dev, struct slsi_peer *peer,
+			     struct slsi_ba_session_rx *ba_session_rx, u16 sn)
+{
+	struct netdev_vif *ndev_vif = netdev_priv(dev);
+	struct sap_drv_ma_to_mlme_delba_req *delba_req;
+	struct sk_buff *skb = NULL;
+
+	SLSI_NET_DBG4(dev, SLSI_RX_BA, "sn=%d\n", sn);
+	/* construct a message for MLME */
+	skb = alloc_skb(sizeof(struct sap_drv_ma_to_mlme_delba_req), GFP_ATOMIC);
+
+	if (WARN_ON(!skb))
+		return;
+
+	ba_session_rx->closing = true;
+	slsi_skb_cb_init(skb)->sig_length = sizeof(struct sap_drv_ma_to_mlme_delba_req);
+	slsi_skb_cb_get(skb)->data_length = sizeof(struct sap_drv_ma_to_mlme_delba_req);
+
+	delba_req = (struct sap_drv_ma_to_mlme_delba_req *)skb_put(skb, sizeof(struct sap_drv_ma_to_mlme_delba_req));
+	delba_req->header.id = cpu_to_le16(SAP_DRV_MA_TO_MLME_DELBA_REQ);
+	delba_req->header.receiver_pid = 0;
+	delba_req->header.sender_pid = 0;
+	delba_req->header.fw_reference = 0;
+	delba_req->vif = ndev_vif->ifnum;
+
+	memcpy(delba_req->peer_qsta_address, peer->address, ETH_ALEN);
+	delba_req->sequence_number = sn;
+	delba_req->user_priority = ba_session_rx->tid;
+	delba_req->reason = FAPI_REASONCODE_OUT_OF_RANGE_SEQUENCE_NUMBER;
+	delba_req->direction = FAPI_DIRECTION_RECEIVE;
+
+	/* queue the message for MLME SAP */
+	slsi_rx_enqueue_netdev_mlme(ndev_vif->sdev, skb, fapi_get_vif(skb));
+}
+
 static int ba_consume_frame_or_get_buffer_index(struct net_device *dev, struct slsi_peer *peer,
 						struct slsi_ba_session_rx *ba_session_rx, u16 sn, struct slsi_ba_frame_desc *frame_desc, bool *stop_timer)
 {
 	int i;
 	u16 sn_temp;
-#ifdef CONFIG_SCSC_WLAN_STA_ENHANCED_ARP_DETECT
-	struct netdev_vif *ndev_vif = netdev_priv(dev);
-#endif
 
 	*stop_timer = false;
 
@@ -238,22 +275,17 @@ static int ba_consume_frame_or_get_buffer_index(struct net_device *dev, struct s
 				 * enough for this frame and moved to new window. So check here that the current frame still lies in
 				 * originators transmit window by comparing it with highest sequence number received from originator.
 				 *
-				 * If it lies in the window pass the frame to next process else discard the frame here.
+				 * If it lies in the window pass the frame to next process else pass the frame and initiate DELBA procedure.
 				 */
-				if (IS_SN_LESS(ba_session_rx->highest_received_sn, (((sn + ba_session_rx->buffer_size) & 0xFFF) - 1))) {
+				if (IS_SN_LESS(ba_session_rx->highest_received_sn, ((sn + ba_session_rx->buffer_size) & 0xFFF))) {
 					SLSI_NET_DBG4(dev, SLSI_RX_BA, "old frame, but still in window: sn=%d, highest_received_sn=%d\n", sn, ba_session_rx->highest_received_sn);
 					ba_add_frame_to_ba_complete(dev, frame_desc);
 				} else {
-					SLSI_NET_DBG1(dev, SLSI_RX_BA, "old frame, drop: sn=%d, expected_sn=%d\n", sn, ba_session_rx->expected_sn);
-#ifdef CONFIG_SCSC_WLAN_STA_ENHANCED_ARP_DETECT
-					if (ndev_vif->enhanced_arp_detect_enabled)
-						slsi_fill_enhanced_arp_out_of_order_drop_counter(ndev_vif,
-												 frame_desc->signal);
-#endif
-#ifdef CONFIG_SCSC_SMAPPER
-					hip4_smapper_free_mapped_skb(frame_desc->signal);
-#endif
-					kfree_skb(frame_desc->signal);
+					SLSI_NET_DBG4(dev, SLSI_RX_BA, "old frame, accept but as countermeasure initiate delete BA: sn=%d, expected_sn=%d\n", sn, ba_session_rx->expected_sn);
+					ba_add_frame_to_ba_complete(dev, frame_desc);
+
+					if (ba_out_of_range_delba_enable && !ba_session_rx->closing)
+						ba_delete_ba_on_old_frame(dev, peer, ba_session_rx, sn);
 				}
 			}
 		}
@@ -520,6 +552,7 @@ static int slsi_rx_ba_start(struct net_device *dev,
 	ba_session_rx->start_sn = start_sn;
 	ba_session_rx->expected_sn = start_sn;
 	ba_session_rx->highest_received_sn = 0;
+	ba_session_rx->closing = false;
 	ba_session_rx->trigger_ba_after_ssn = false;
 	ba_session_rx->tid = tid;
 	ba_session_rx->timer_on = false;
@@ -541,7 +574,7 @@ static int slsi_rx_ba_start(struct net_device *dev,
 	return 0;
 }
 
-static void slsi_ba_process_error(struct net_device *dev,
+void slsi_ba_update_window(struct net_device *dev,
 				  struct slsi_ba_session_rx *ba_session_rx, u16 sequence_number)
 {
 	struct netdev_vif		  *ndev_vif = netdev_priv(dev);
@@ -602,7 +635,7 @@ void slsi_handle_blockack(struct net_device *dev, struct slsi_peer *peer,
 			break;
 		case FAPI_REASONCODE_UNSPECIFIED_REASON:
 			if (ba_session_rx)
-				slsi_ba_process_error(dev, ba_session_rx, sequence_number);
+				slsi_ba_update_window(dev, ba_session_rx, sequence_number);
 			break;
 		default:
 			SLSI_NET_ERR(dev, "Invalid value: reason_code=%d\n", reason_code);
