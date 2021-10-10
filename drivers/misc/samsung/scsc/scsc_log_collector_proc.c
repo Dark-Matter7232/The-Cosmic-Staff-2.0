@@ -6,6 +6,7 @@
 
 #include <linux/uaccess.h>
 #include <linux/ctype.h>
+#include <scsc/scsc_logring.h>
 #include <scsc/scsc_log_collector.h>
 #include "scsc_log_collector_proc.h"
 

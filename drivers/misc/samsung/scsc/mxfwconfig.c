@@ -12,7 +12,7 @@
 #include "scsc_mx_impl.h"
 #include "mxconf.h"
 
-#if IS_ENABLED(CONFIG_SCSC_LOG_COLLECTION)
+#ifdef CONFIG_SCSC_LOG_COLLECTION
 #include <scsc/scsc_log_collector.h>
 #endif
 

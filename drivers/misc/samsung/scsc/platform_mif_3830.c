@@ -50,7 +50,7 @@
 #error Target processor CONFIG_SOC_EXYNOS3830 not selected
 #endif
 
-#if IS_ENABLED(CONFIG_SCSC_LOG_COLLECTION)
+#ifdef CONFIG_SCSC_LOG_COLLECTION
 #include <scsc/scsc_log_collector.h>
 #endif
 /* Time to wait for CFG_REQ IRQ on 3830 */

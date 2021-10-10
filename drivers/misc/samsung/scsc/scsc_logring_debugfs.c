@@ -67,23 +67,6 @@ static atomic_t      scsc_debugfs_root_refcnt;
 #endif
 static char          *global_fmt_string = "%s";
 
-#if IS_ENABLED(CONFIG_SCSC_MXLOGGER)
-static struct scsc_logring_mx_cb *mx_cb_single;
-
-int scsc_logring_register_mx_cb(struct scsc_logring_mx_cb *mx_cb)
-{
-	mx_cb_single = mx_cb;
-	return 0;
-}
-EXPORT_SYMBOL(scsc_logring_register_mx_cb);
-
-int scsc_logring_unregister_mx_cb(struct scsc_logring_mx_cb *mx_cb)
-{
-	mx_cb_single = NULL;
-	return 0;
-}
-EXPORT_SYMBOL(scsc_logring_unregister_mx_cb);
-#endif
 /**
  * Generic open/close calls to use with every logring debugfs file.
  * Any file in debugfs has an underlying associated ring buffer:
@@ -248,11 +231,7 @@ static ssize_t samsg_read(struct file *filp, char __user *ubuf,
 	size_t		 off = 0;
 	size_t		 retrieved_bytes = 0;
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0))
-        if (!filp->private_data || !access_ok(VERIFY_WRITE, ubuf, count))
-#else
-	if (!filp->private_data || !access_ok(ubuf, count))
-#endif
+	if (!filp->private_data || !access_ok(VERIFY_WRITE, ubuf, count))
 		return -ENOMEM;
 	if (filp->f_flags & O_NONBLOCK)
 		return -EAGAIN;
@@ -349,18 +328,17 @@ static int samsg_open(struct inode *ino, struct file *filp)
 	filp->private_data = NULL;
 #endif
 	ret = debugfile_open(ino, filp);
-#if IS_ENABLED(CONFIG_SCSC_MXLOGGER)
-	if (!ret && mx_cb_single && mx_cb_single->scsc_logring_register_observer)
-		mx_cb_single->scsc_logring_register_observer(mx_cb_single, "LOGRING");
+#ifdef CONFIG_SCSC_MXLOGGER
+	if (!ret)
+		scsc_service_register_observer(NULL, "LOGRING");
 #endif
 	return ret;
 }
 
 static int samsg_release(struct inode *ino, struct file *filp)
 {
-#if IS_ENABLED(CONFIG_SCSC_MXLOGGER)
-	if (mx_cb_single && mx_cb_single->scsc_logring_unregister_observer)
-		mx_cb_single->scsc_logring_unregister_observer(mx_cb_single, "LOGRING");
+#ifdef CONFIG_SCSC_MXLOGGER
+	scsc_service_unregister_observer(NULL, "LOGRING");
 #endif
 
 	return debugfile_release(ino, filp);

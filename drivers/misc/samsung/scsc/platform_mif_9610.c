@@ -47,7 +47,7 @@
 #error Target processor CONFIG_SOC_EXYNOS9610 not selected
 #endif
 
-#if IS_ENABLED(CONFIG_SCSC_LOG_COLLECTION)
+#ifdef CONFIG_SCSC_LOG_COLLECTION
 #include <scsc/scsc_log_collector.h>
 #endif
 /* Time to wait for CFG_REQ IRQ on 9610 */
@@ -161,7 +161,6 @@ struct platform_mif {
 	int (*suspend_handler)(struct scsc_mif_abs *abs, void *data);
 	void (*resume_handler)(struct scsc_mif_abs *abs, void *data);
 	void *suspendresume_data;
-	bool reset_failed;
 };
 
 inline void platform_int_debug(struct platform_mif *platform);
@@ -687,6 +686,8 @@ uint32_t ka_patch[] = {
 	0x00000022,
 };
 
+extern bool reset_failed;
+
 irqreturn_t platform_cfg_req_isr(int irq, void *data)
 {
 	struct platform_mif *platform = (struct platform_mif *)data;
@@ -729,7 +730,7 @@ irqreturn_t platform_cfg_req_isr(int irq, void *data)
 		regmap_read(platform->pmureg, WLBT_DEBUG, &val);
 		SCSC_TAG_INFO(PLAT_MIF, "WLBT_DEBUG 0x%x\n", val);
 
-		platform->reset_failed = true; /* prevent further interaction with HW */
+		reset_failed = true; /* prevent further interaction with HW */
 
 		return IRQ_HANDLED;
 	}
@@ -852,16 +853,6 @@ cfg_error:
 	return IRQ_HANDLED;
 }
 #endif
-
-static bool platform_mif_reset_failure(struct scsc_mif_abs *interface)
-{
-	struct platform_mif *platform = platform_mif_from_mif_abs(interface);
-
-	if (!platform)
-		return false;
-
-	return platform->reset_failed;
-}
 
 static void platform_mif_unregister_irq(struct platform_mif *platform)
 {
@@ -1728,9 +1719,6 @@ struct scsc_mif_abs *platform_mif_create(struct platform_device *pdev)
 	platform_if->mif_pm_qos_update_request = platform_mif_pm_qos_update_request;
 	platform_if->mif_pm_qos_remove_request = platform_mif_pm_qos_remove_request;
 #endif
-	platform->reset_failed = false;
-	platform_if->mif_reset_failure = platform_mif_reset_failure;
-
 	/* Update state */
 	platform->pdev = pdev;
 	platform->dev = &pdev->dev;
