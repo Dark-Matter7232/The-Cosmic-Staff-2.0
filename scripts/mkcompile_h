@@ -39,7 +39,7 @@ else
 fi
 
 if [ -z "$KBUILD_BUILD_TIMESTAMP" ]; then
-	TIMESTAMP=`date`
+	TIMESTAMP=`date -u`
 else
 	TIMESTAMP=$KBUILD_BUILD_TIMESTAMP
 fi
