@@ -2733,7 +2733,7 @@ static int decon_set_win_config(struct decon_device *decon,
 				break;
 			case 3:
 				cpu_input_boost_kick_max(60);
-				devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 260);
+				devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 60);
 				break;
 			default:
 				pr_info("Battery profile detected! Skipping CPU & DDR bus boosts\n");
@@ -2772,7 +2772,7 @@ static int decon_set_win_config(struct decon_device *decon,
 				break;
 			case 3:
 				cpu_input_boost_kick_max(60);
-				devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 260);
+				devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 60);
 				break;
 			default:
 				pr_info("Battery profile detected! Skipping CPU & DDR bus boosts\n");
