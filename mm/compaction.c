@@ -26,7 +26,6 @@
 #include <linux/fb.h>
 #include <linux/moduleparam.h>
 #include <linux/time.h>
-#include <linux/cpu_input_boost.h>
 #include <linux/devfreq_boost.h>
 #include <linux/workqueue.h>
 #include "internal.h"
@@ -2002,7 +2001,6 @@ static void kcompactd_do_work(pg_data_t *pgdat)
 	count_compact_event(KCOMPACTD_WAKE);
 
 	devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 100);
-	cpu_input_boost_kick_max(100);
 
 	for (zoneid = 0; zoneid <= cc.classzone_idx; zoneid++) {
 		int status;
