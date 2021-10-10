@@ -21,13 +21,6 @@ choice
 	config HZ_50
 		bool "50 HZ"
 
-	config HZ_80
-		bool "80 HZ"
-	help
-	  80 Hz is the lowest non-problematic tick rate which theoretically
-	  it should provide the best power efficiency at the cost of mildly
-	  performance penalty.
-
 	config HZ_100
 		bool "100 HZ"
 	help
@@ -62,7 +55,6 @@ endchoice
 config HZ
 	int
 	default 25 if HZ_25
-	default 80 if HZ_80
 	default 50 if HZ_50
 	default 100 if HZ_100
 	default 250 if HZ_250
