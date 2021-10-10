@@ -62,7 +62,7 @@ MODULE_PARM_DESC(lls_disabled, "Disable LLS: to disable LLS set 1");
 #ifdef SCSC_SEP_VERSION
 static bool gscan_disabled = 1;
 #else
-static bool gscan_disabled;
+static bool gscan_disabled = 0;
 #endif
 module_param(gscan_disabled, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(gscan_disabled, "Disable gscan: to disable gscan set 1");
@@ -82,12 +82,7 @@ MODULE_PARM_DESC(vo_vi_block_ack_disabled, "Disable VO VI Block Ack logic added 
 static int max_scan_result_count = 200;
 module_param(max_scan_result_count, int, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(max_scan_result_count, "Max scan results to be reported");
-
-#ifdef CONFIG_SCSC_WLAN_RTT
-static bool rtt_disabled;
-#else
 static bool rtt_disabled = 1;
-#endif
 module_param(rtt_disabled, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(rtt_disabled, "Disable rtt: to disable rtt set 1");
 
@@ -108,19 +103,9 @@ static int nan_max_ndi_ifaces = 1;
 module_param(nan_max_ndi_ifaces, int, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(nan_max_ndi_ifaces, "max ndi interface");
 
-#ifdef SCSC_SEP_VERSION
-static int nan_ndp_delay_ms = 550;
-static int nan_ndp_max_delay_ms = 600;
-#else
-static int nan_ndp_delay_ms = 750;
-static int nan_ndp_max_delay_ms = 800;
-#endif
-
+static int nan_ndp_delay_ms = 200;
 module_param(nan_ndp_delay_ms, int, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(nan_ndp_delay_ms, "ndp delay time");
-module_param(nan_ndp_max_delay_ms, int, S_IRUGO | S_IWUSR);
-MODULE_PARM_DESC(nan_ndp_max_delay_ms, "max ndp delay time");
-
 #endif
 
 bool slsi_dev_gscan_supported(void)
@@ -188,14 +173,6 @@ int slsi_get_nan_max_ndi_ifaces(void)
 int slsi_get_nan_ndp_delay(void)
 {
 	return nan_ndp_delay_ms;
-}
-
-int slsi_get_nan_ndp_max_time(void)
-{
-	if (nan_ndp_delay_ms >= nan_ndp_max_delay_ms)
-		nan_ndp_max_delay_ms = nan_ndp_delay_ms + 50;
-
-	return nan_ndp_max_delay_ms;
 }
 #endif
 
@@ -280,14 +257,15 @@ struct slsi_dev *slsi_dev_attach(struct device *dev, struct scsc_mx *core, struc
 	}
 
 	sdev->mlme_blocked = false;
-	sdev->wlan_service_on = 0;
 
 	SLSI_MUTEX_INIT(sdev->netdev_add_remove_mutex);
 	mutex_init(&sdev->netdev_remove_mutex);
 	SLSI_MUTEX_INIT(sdev->start_stop_mutex);
 	SLSI_MUTEX_INIT(sdev->device_config_mutex);
 	SLSI_MUTEX_INIT(sdev->logger_mutex);
+#ifdef CONFIG_SCSC_WLAN_RX_NAPI_CPU_AFFINITY
 	slsi_spinlock_create(&sdev->netdev_lock);
+#endif
 	sdev->dev = dev;
 	sdev->maxwell_core = core;
 	memcpy(&sdev->mx_wlan_client, mx_wlan_client, sizeof(struct scsc_service_client));
@@ -316,17 +294,11 @@ struct slsi_dev *slsi_dev_attach(struct device *dev, struct scsc_mx *core, struc
 
 	slsi_log_clients_init(sdev);
 	slsi_traffic_mon_clients_init(sdev);
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
-	slsi_wake_lock_init(NULL,&sdev->wlan_wl.ws, "wlan");
-	slsi_wake_lock_init(NULL,&sdev->wlan_wl_mlme.ws, "wlan_mlme");
-	slsi_wake_lock_init(NULL,&sdev->wlan_wl_ma.ws, "wlan_ma");
-	slsi_wake_lock_init(NULL,&sdev->wlan_wl_roam.ws, "wlan_roam");
-#else
+
 	slsi_wake_lock_init(&sdev->wlan_wl, WAKE_LOCK_SUSPEND, "wlan");
 	slsi_wake_lock_init(&sdev->wlan_wl_mlme, WAKE_LOCK_SUSPEND, "wlan_mlme");
 	slsi_wake_lock_init(&sdev->wlan_wl_ma, WAKE_LOCK_SUSPEND, "wlan_ma");
 	slsi_wake_lock_init(&sdev->wlan_wl_roam, WAKE_LOCK_SUSPEND, "wlan_roam");
-#endif
 
 	sdev->recovery_next_state = 0;
 	init_completion(&sdev->recovery_remove_completion);
@@ -348,7 +320,11 @@ struct slsi_dev *slsi_dev_attach(struct device *dev, struct scsc_mx *core, struc
 		SLSI_ERR(sdev, "Can not create the network interface\n");
 		goto err_ctrl_wq_init;
 	}
-	slsi_hip_init(sdev, dev);
+
+	if (slsi_hip_init(sdev, dev) != 0) {
+		SLSI_ERR(sdev, "slsi_hip_init() Failed\n");
+		goto err_netif_init;
+	}
 
 	if (slsi_udi_node_init(sdev, dev) != 0) {
 		SLSI_ERR(sdev, "failed to init UDI\n");
@@ -403,7 +379,7 @@ struct slsi_dev *slsi_dev_attach(struct device *dev, struct scsc_mx *core, struc
 		goto err_wlan_registered;
 	}
 #if defined(CONFIG_SCSC_WLAN_WIFI_SHARING) || defined(CONFIG_SCSC_WLAN_DUAL_STATION)
-#if defined(CONFIG_SCSC_WLAN_MHS_STATIC_INTERFACE) || (defined(SCSC_SEP_VERSION) && SCSC_SEP_VERSION >= 9) || defined(CONFIG_SCSC_WLAN_DUAL_STATION)
+#if defined(CONFIG_SCSC_WLAN_MHS_STATIC_INTERFACE) || (defined(SCSC_SEP_VERSION) && SCSC_SEP_VERSION >= 90000) || defined(CONFIG_SCSC_WLAN_DUAL_STATION)
 	if (slsi_netif_register(sdev, sdev->netdev[SLSI_NET_INDEX_P2PX_SWLAN]) != 0) {
 		SLSI_ERR(sdev, "failed to register with p2px_wlan1 netdev\n");
 		goto err_p2p_registered;
@@ -415,7 +391,7 @@ struct slsi_dev *slsi_dev_attach(struct device *dev, struct scsc_mx *core, struc
 	if (slsi_netif_register(sdev, sdev->netdev[SLSI_NET_INDEX_NAN]) != 0) {
 		SLSI_ERR(sdev, "failed to register with NAN netdev\n");
 #if defined(CONFIG_SCSC_WLAN_WIFI_SHARING) || defined(CONFIG_SCSC_WLAN_DUAL_STATION)
-#if defined(CONFIG_SCSC_WLAN_MHS_STATIC_INTERFACE) || (defined(SCSC_SEP_VERSION) && SCSC_SEP_VERSION >= 9) || defined(CONFIG_SCSC_WLAN_DUAL_STATION)
+#if defined(CONFIG_SCSC_WLAN_MHS_STATIC_INTERFACE) || (defined(SCSC_SEP_VERSION) && SCSC_SEP_VERSION >= 90000) || defined(CONFIG_SCSC_WLAN_DUAL_STATION)
 		goto err_p2px_wlan_registered;
 #else
 		goto err_p2p_registered;
@@ -445,7 +421,7 @@ struct slsi_dev *slsi_dev_attach(struct device *dev, struct scsc_mx *core, struc
 		goto err_nan_registered;
 #else
 #if defined(CONFIG_SCSC_WLAN_WIFI_SHARING) || defined(CONFIG_SCSC_WLAN_DUAL_STATION)
-#if defined(CONFIG_SCSC_WLAN_MHS_STATIC_INTERFACE) || (defined(SCSC_SEP_VERSION) && SCSC_SEP_VERSION >= 9) || defined(CONFIG_SCSC_WLAN_DUAL_STATION)
+#if defined(CONFIG_SCSC_WLAN_MHS_STATIC_INTERFACE) || (defined(SCSC_SEP_VERSION) && SCSC_SEP_VERSION >= 90000) || defined(CONFIG_SCSC_WLAN_DUAL_STATION)
 		goto err_p2px_wlan_registered;
 #else
 		goto err_p2p_registered;
@@ -468,7 +444,7 @@ err_nan_registered:
 #endif
 
 #if defined(CONFIG_SCSC_WLAN_WIFI_SHARING) || defined(CONFIG_SCSC_WLAN_DUAL_STATION)
-#if defined(CONFIG_SCSC_WLAN_MHS_STATIC_INTERFACE) || (defined(SCSC_SEP_VERSION) && SCSC_SEP_VERSION >= 9) || defined(CONFIG_SCSC_WLAN_DUAL_STATION)
+#if defined(CONFIG_SCSC_WLAN_MHS_STATIC_INTERFACE) || (defined(ANDROID_VERSION) && ANDROID_VERSION >= 90000) || defined(CONFIG_SCSC_WLAN_DUAL_STATION)
 err_p2px_wlan_registered:
 	slsi_netif_remove(sdev, sdev->netdev[SLSI_NET_INDEX_P2PX_SWLAN]);
 	rcu_assign_pointer(sdev->netdev_ap, NULL);
@@ -497,6 +473,8 @@ err_udi_proc_init:
 
 err_hip_init:
 	slsi_hip_deinit(sdev);
+
+err_netif_init:
 	slsi_netif_deinit(sdev);
 
 err_ctrl_wq_init:
@@ -597,7 +575,7 @@ int __init slsi_dev_load(void)
 	sap_test_init();
 
 /* Always create devnode if TW Android P on */
-#if defined(SCSC_SEP_VERSION) && SCSC_SEP_VERSION >= 9
+#if defined(SCSC_SEP_VERSION) && SCSC_SEP_VERSION >= 90000
 	slsi_create_sysfs_macaddr();
 #endif
 	SLSI_INFO_NODEV("--- Maxwell Wi-Fi driver loaded successfully ---\n");
@@ -608,7 +586,7 @@ void __exit slsi_dev_unload(void)
 {
 	SLSI_INFO_NODEV("Unloading Maxwell Wi-Fi driver\n");
 
-#if defined(SCSC_SEP_VERSION) && SCSC_SEP_VERSION >= 9
+#if defined(SCSC_SEP_VERSION) && SCSC_SEP_VERSION >= 90000
 	slsi_destroy_sysfs_macaddr();
 #endif
 	/* Unregister SAPs */

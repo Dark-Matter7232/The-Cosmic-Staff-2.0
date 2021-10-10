@@ -15,13 +15,9 @@
 #include "scsc_wlbtd.h"
 #endif
 
-#if IS_ENABLED(CONFIG_DEBUG_SNAPSHOT)
+#if defined(CONFIG_DEBUG_SNAPSHOT)
 #include <linux/uaccess.h>
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
-#include <soc/samsung/debug-snapshot.h>
-#else
 #include <linux/debug-snapshot.h>
-#endif
 #endif
 
 #ifndef AID_MXPROC
@@ -188,14 +184,14 @@ static ssize_t mx_procfs_mx_panic_write(struct file *file, const char __user *us
 	OS_UNUSED_PARAMETER(count);
 	OS_UNUSED_PARAMETER(ppos);
 
-#if IS_ENABLED(CONFIG_DEBUG_SNAPSHOT) && defined(GO_S2D_ID)
+#if defined(CONFIG_DEBUG_SNAPSHOT) && defined(GO_S2D_ID)
 	if (count != 2)
 		return -EFAULT;
 	if (copy_from_user(&value, user_buf, 1))
 		return -EFAULT;
 	if (value == '3') {
 		SCSC_TAG_INFO(MX_PROC, "Manual Scandump");
-		dbg_snapshot_do_dpm_policy(GO_S2D_ID);
+		dbg_snapshot_soc_do_dpm_policy(GO_S2D_ID);
 	} else if (mxproc) {
 		SCSC_TAG_INFO(MX_PROC, "Manual FW Panic");
 		mxman_force_panic(mxproc->mxman);
