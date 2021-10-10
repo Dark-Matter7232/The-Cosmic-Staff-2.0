@@ -156,7 +156,6 @@
 			shared_meta: vbmeta {
 			};
 			android_q_fstab: fstab {
-				};
 			};
 		};
 	};
