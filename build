@@ -3,22 +3,11 @@
 BUILD_DATE=$(date +"%m-%d-%Y")
 
 # Directory variables
-TC_DIR="/tc/clang/bin"
 ZIP_DIR="/home/ichibauer/kernelBuilding/zippy"
 IMG_DIR="/home/ichibauer/kernelBuilding/imageyy/AIK-Linux"
 OUT_IMG_DIR="/home/ichibauer/kernelBuilding/optio/out/arch/arm64/boot"
 FINAL_DIR="/home/ichibauer/kernelBuilding/feenal"
 PUSH_PHONE_DIR="/sdcard/Download"
-
-export ARCH=arm64
-export SUBARCH=arm64
-export LLVM=1
-export ANDROID_MAJOR_VERSION=r
-export PATH=${TC_DIR}:$PATH
-export PLATFORM_VERSION=11
-export CROSS_COMPILE=aarch64-linux-gnu-
-export KBUILD_BUILD_USER=$(whoami)
-export KBUILD_BUILD_HOST=$(hostname)
 
 backupKernel() 
 {
@@ -81,7 +70,7 @@ packKernel()
 		printf "Optio-\n" | figlet > version
 		echo "<----------------------------------->" >> version
 		echo "- Build date : ${BUILD_DATE}" >> version
-		echo "- By	   : @$(whoami)" >> version
+		echo "- By         : @$(whoami)" >> version
 		echo "<----------------------------------->" >> version
 
 		mv ${OUT_IMG_DIR}/Image ${ZIP_DIR}
@@ -168,4 +157,46 @@ compileKernel()
 	packKernel
 }
 
-compileKernel
+toolchainSelect()
+{
+	clear
+
+	printf "\n"
+	printf " 1. GCC\n"
+	printf " 2. Clang\n"
+	printf " 3. Stock Samsung\n"
+
+	printf "\n"
+	read -p " > Select toolchain: " toolchainChoice
+
+	if [ $toolchainChoice == "1" ]
+	then
+		TC_DIR="/tc/gcc/bin"
+		export CROSS_COMPILE=aarch64-cruel-elf-
+	elif [ $toolchainChoice == "2" ]
+	then
+		TC_DIR="/tc/clang/bin"
+		export LLVM=1
+		export CROSS_COMPILE=aarch64-linux-gnu-
+	elif [ $toolchainChoice == "3" ]
+	then
+		TC_DIR="/tc/stock/bin"
+		export STOCK=1
+		export CROSS_COMPILE=aarch64-linux-android-
+	else
+		printf "\n"
+		printf " > Invalid input\n"
+		printf "\n"
+		exit 1
+	fi
+
+	export ARCH=arm64
+	export SUBARCH=arm64
+	export ANDROID_MAJOR_VERSION=r
+	export PATH=${TC_DIR}:$PATH
+	export PLATFORM_VERSION=11
+
+	compileKernel
+}
+
+toolchainSelect
