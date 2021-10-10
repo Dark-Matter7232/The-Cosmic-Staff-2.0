@@ -50,8 +50,6 @@
 #include <linux/printk.h>
 #include <linux/dax.h>
 #include <linux/psi.h>
-#include <linux/cpu_input_boost.h>
-#include <linux/devfreq_boost.h>
 #include <linux/ems_service.h>
 
 #include <asm/tlbflush.h>
@@ -3970,8 +3968,6 @@ void wakeup_kswapd(struct zone *zone, int order, enum zone_type classzone_idx)
 	if (!cpuset_zone_allowed(zone, GFP_KERNEL | __GFP_HARDWALL))
 		return;
 
-	devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 100);
-	cpu_input_boost_kick_max(100);
 	kpp_request(STUNE_TOPAPP, &kpp_ta, 1);
 	kpp_request(STUNE_FOREGROUND, &kpp_fg, 1);
 

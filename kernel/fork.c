@@ -2156,12 +2156,12 @@ long _do_fork(unsigned long clone_flags,
 		switch (active_mode())
 		{
 			case 2:
-				cpu_input_boost_kick_max(260);
-				devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 260);
+				cpu_input_boost_kick_max(60);
+				devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 60);
 				break;
 			case 3:
-				cpu_input_boost_kick_max(3275);
-				devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 3275);
+				cpu_input_boost_kick_max(60);
+				devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 60);
 		}	
 #endif
 	}
