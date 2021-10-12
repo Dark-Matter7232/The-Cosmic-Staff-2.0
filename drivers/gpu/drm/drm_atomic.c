@@ -2259,7 +2259,7 @@ static int __drm_mode_atomic_ioctl(struct drm_device *dev, void *data,
 		{
 			case 2:
 			case 3:
-				devfreq_boost_kick(DEVFREQ_EXYNOS_MIF);
+				devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 40);
 		}
 	}
 #endif
