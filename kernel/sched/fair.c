@@ -7573,16 +7573,10 @@ int find_best_target(struct task_struct *p, int *backup_cpu,
 				continue;
 
 			/*
-			 * Enforce EAS mode
-			 *
-			 * For non latency sensitive tasks, skip CPUs that
-			 * will be overutilized by moving the task there.
-			 *
-			 * The goal here is to remain in EAS mode as long as
-			 * possible at least for !prefer_idle tasks.
+			 * Favor CPUs with smaller capacity for non latency
+			 * sensitive tasks.
 			 */
-			if ((new_util * capacity_margin) >
-			    (capacity_orig * SCHED_CAPACITY_SCALE))
+			if (capacity_orig > target_capacity)
 				continue;
 
 			/*
