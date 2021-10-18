@@ -113,9 +113,6 @@
 #include <linux/defex.h>
 #endif
 
-#ifdef CONFIG_KPROFILES
-#include <linux/kprofiles.h>
-#endif
 
 /*
  * Minimum number of threads to boot the kernel
@@ -2148,23 +2145,10 @@ long _do_fork(unsigned long clone_flags,
 	int trace = 0;
 	long nr;
 
-	/* Boost DDR bus & CPU to the max for 260/3275 ms when userspace launches an app */
-	if (task_is_zygote(current)) {
-		kpp_request(STUNE_TOPAPP, &kpp_ta, 1);
-		kpp_request(STUNE_FOREGROUND, &kpp_fg, 1);
-#ifdef CONFIG_KPROFILES
-		switch (active_mode())
-		{
-			case 2:
-				cpu_input_boost_kick_max(60);
-				devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 60);
-				break;
-			case 3:
-				cpu_input_boost_kick_max(60);
-				devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 60);
-		}	
-#endif
-	}
+        /* Boost DDR bus and CPU to the max for 80 ms and 100 ms respectively when userspace launches an app */
+	if (task_is_zygote(current))
+                cpu_input_boost_kick_max(250);  
+                devfreq_boost_kick_max(DEVFREQ_EXYNOS_MIF, 100);
 
 	/*
 	 * Determine whether and which event to report to ptracer.  When
