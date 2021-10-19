@@ -21,6 +21,11 @@ choice
 	config HZ_50
 		bool "50 HZ"
 
+	config HZ_80
+		bool "80 HZ"
+	help
+	  Me-Mad-Man.
+
 	config HZ_100
 		bool "100 HZ"
 	help
@@ -55,6 +60,7 @@ endchoice
 config HZ
 	int
 	default 25 if HZ_25
+	default 80 if HZ_80
 	default 50 if HZ_50
 	default 100 if HZ_100
 	default 250 if HZ_250
