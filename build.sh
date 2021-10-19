@@ -77,8 +77,8 @@ build_kernel_image() {
     if [[ ${DEVICE} == 'M21' ]]; then
         script_echo 'Building CosmicStaff Kernel For M21'
         sleep 3
-        make O=out -C $(pwd) CC=${BUILD_PREF_COMPILER} AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip -j$((`nproc`+1)) M21_defconfig 2>&1 LOCALVERSION="—TheCosmicStaff-R${LOCALVERSION}" | sed 's/^/     /'
-        make O=out -C $(pwd) CC=${BUILD_PREF_COMPILER} AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip -j$((`nproc`+1)) 2>&1 LOCALVERSION="—TheCosmicStaff-R${LOCALVERSION}" | sed 's/^/     /'
+        make O=out -C $(pwd) CC=${BUILD_PREF_COMPILER} AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip -j$((`nproc`+1)) M21_defconfig 2>&1 LOCALVERSION="—TheCosmicStaff-R$KV" | sed 's/^/     /'
+        make O=out -C $(pwd) CC=${BUILD_PREF_COMPILER} AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip -j$((`nproc`+1)) 2>&1 LOCALVERSION="—TheCosmicStaff-R$KV" | sed 's/^/     /'
     else
         script_echo 'Building CosmicStaff Kernel For M31'
         sleep 3
