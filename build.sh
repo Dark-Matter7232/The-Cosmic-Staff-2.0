@@ -69,48 +69,24 @@ verify_toolchain_install() {
     fi
 }
 build_kernel_image() {
-    sleep 3
     script_echo " "
-    read -p "Enter Device name: " DEVICE
     read -p "Write the Kernel version: " KV
     
-    if [[ ${DEVICE} == 'M21' ]]; then
-        script_echo 'Building CosmicStaff Kernel For M21'
-        sleep 3
-        make O=out -C $(pwd) CC=${BUILD_PREF_COMPILER} AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip -j$((`nproc`+1)) M21_defconfig 2>&1 LOCALVERSION="—TheCosmicStaff-R$KV" | sed 's/^/     /'
-        make O=out -C $(pwd) CC=${BUILD_PREF_COMPILER} AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip -j$((`nproc`+1)) 2>&1 LOCALVERSION="—TheCosmicStaff-R$KV" | sed 's/^/     /'
-    else
-        script_echo 'Building CosmicStaff Kernel For M31'
-        sleep 3
-        make -C $(pwd) CC=${BUILD_PREF_COMPILER} AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip -j$((`nproc`+1)) M31_defconfig 2>&1 | sed 's/^/     /'
-        make -C $(pwd) CC=${BUILD_PREF_COMPILER} AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip -j$((`nproc`+1)) 2>&1 | sed 's/^/     /'
-    fi
+    script_echo 'Building CosmicStaff Kernel For M21'
+    make O=out -C $(pwd) CC=${BUILD_PREF_COMPILER} AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip -j$((`nproc`+1)) M21_defconfig 2>&1 | sed 's/^/     /'
+    make O=out -C $(pwd) CC=${BUILD_PREF_COMPILER} AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip -j$((`nproc`+1)) 2>&1 | sed 's/^/     /'
 }
 build_flashable_zip() {
     if [[ -e "$(pwd)/out/arch/arm64/boot/Image" ]]; then
         script_echo " "
         script_echo "I: Building kernel image..."
         echo -e "${GRN}"
-        rm -rf $(pwd)/output/*
-        rm -rf $(pwd)/CosmicStaff/AK/Image
-        rm -rf $(pwd)/CosmicStaff/AK/*.zip
-        cp -r $(pwd)/out/arch/arm64/boot/Image $(pwd)/CosmicStaff/AK/Image
-        cd $(pwd)/CosmicStaff/AK
-        bash zip.sh
-        cd ../..
-        if [[ ! -f ${ORIGIN_DIR}/CosmicStaff/AK/Image ]]; then
-            echo -e "${RED}"
-            script_echo " "
-            script_echo "E: Kernel image not built successfully!"
-            script_echo "   Errors can be fround from above."
-            sleep 3
-            exit_script
-        else
-            rm -f $(pwd)/out/arch/arm64/boot/Image
-            rm -f $(pwd)/CosmicStaff/AK/{Image, *.zip}
-            rm -f $(pwd)/output/*
-        fi
-        
+        rm -f $(pwd)/out/arch/arm64/boot/Image
+        rm -f $(pwd)/CosmicStaff/{Image, *.zip}
+        cp -r $(pwd)/out/arch/arm64/boot/Image CosmicStaff/Image
+        cd $(pwd)/CosmicStaff/
+        zip -r9 "CosmicStaff-R$KV.zip" anykernel.sh META-INF tools version Image
+        cd ../..        
     else
         echo -e "${RED}"
         script_echo "E: Image not built!"
