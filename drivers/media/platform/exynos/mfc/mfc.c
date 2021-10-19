@@ -47,7 +47,6 @@
 #include "mfc_buf.h"
 #include "mfc_mem.h"
 #include <linux/devfreq_boost.h>
-#include <linux/cpu_input_boost.h>
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/mfc.h>
@@ -486,7 +485,6 @@ static int mfc_open(struct file *file)
 	if (node == MFCNODE_DECODER) {
 		dev->num_dec++;
 		if (dev->num_dec == 1)
-			disable_cib_video_boost(true);
 			devfreq_boost_disable(true);
 	}
 
@@ -647,7 +645,6 @@ err_ctx_alloc:
 	if (node == MFCNODE_DECODER) {
 		dev->num_dec--;
 		if (dev->num_dec == 0)
-			disable_cib_video_boost(false);
 			devfreq_boost_disable(false);
 	}
 
@@ -761,7 +758,6 @@ static int mfc_release(struct file *file)
 	if (ctx->type == MFCINST_DECODER && !ctx->is_drm) {
 		dev->num_dec--;
 		if (dev->num_dec == 0)
-			disable_cib_video_boost(false);
 			devfreq_boost_disable(false);
 	}
 

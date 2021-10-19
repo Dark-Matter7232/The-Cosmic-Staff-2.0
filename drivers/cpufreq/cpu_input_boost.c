@@ -59,13 +59,6 @@ static struct boost_drv boost_drv_g __read_mostly = {
 	.boost_waitq = __WAIT_QUEUE_HEAD_INITIALIZER(boost_drv_g.boost_waitq)
 };
 
-static int disable_boost = 0;
-
-void disable_cib_video_boost(int disable)
-{
-	disable_boost = disable;
-}
-
 static unsigned int get_max_boost_freq(struct cpufreq_policy *policy)
 {
 	unsigned int freq;
@@ -134,9 +127,6 @@ static void __cpu_input_boost_kick_max(struct boost_drv *b,
 void cpu_input_boost_kick_max(unsigned int duration_ms)
 {
 	struct boost_drv *b = &boost_drv_g;
-
-	if (disable_boost)
-		return;
 
 	__cpu_input_boost_kick_max(b, duration_ms);
 }
