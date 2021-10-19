@@ -73,20 +73,20 @@ build_kernel_image() {
     read -p "Write the Kernel version: " KV
     
     script_echo 'Building CosmicStaff Kernel For M21'
-    make O=out -C $(pwd) CC=${BUILD_PREF_COMPILER} AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip -j$((`nproc`+1)) M21_defconfig 2>&1 | sed 's/^/     /'
-    make O=out -C $(pwd) CC=${BUILD_PREF_COMPILER} AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip -j$((`nproc`+1)) 2>&1 | sed 's/^/     /'
+    make -C $(pwd) CC=${BUILD_PREF_COMPILER} AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip -j$((`nproc`+1)) M21_defconfig 2>&1 | sed 's/^/     /'
+    make -C $(pwd) CC=${BUILD_PREF_COMPILER} AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip -j$((`nproc`+1)) 2>&1 | sed 's/^/     /'
 }
 build_flashable_zip() {
-    if [[ -e "$(pwd)/out/arch/arm64/boot/Image" ]]; then
+    if [[ -e "$(pwd)/arch/arm64/boot/Image" ]]; then
         script_echo " "
         script_echo "I: Building kernel image..."
         echo -e "${GRN}"
-        rm -f $(pwd)/out/arch/arm64/boot/Image
         rm -f $(pwd)/CosmicStaff/{Image, *.zip}
-        cp -r $(pwd)/out/arch/arm64/boot/Image CosmicStaff/Image
+        cp -r $(pwd)/arch/arm64/boot/Image CosmicStaff/Image
         cd $(pwd)/CosmicStaff/
         zip -r9 "CosmicStaff-R$KV.zip" anykernel.sh META-INF tools version Image
-        cd ../..        
+        cd ../..
+        rm -f $(pwd)/arch/arm64/boot/Image        
     else
         echo -e "${RED}"
         script_echo "E: Image not built!"
