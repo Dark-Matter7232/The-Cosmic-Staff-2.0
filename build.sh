@@ -98,23 +98,6 @@ build_flashable_zip() {
         cd $(pwd)/CosmicStaff/AK
         bash zip.sh
         cd ../..
-        if [[ ${DEVICE} == 'M21' ]]; then
-            cp -r $(pwd)/CosmicStaff/AK/1*.zip $(pwd)/output/CosmicStaff-ONEUI-$KV-M21.zip
-            cd $(pwd)/output
-            wget -q https://temp.sh/up.sh
-            chmod +x up.sh
-            echo -e "${RED}"
-            ./up.sh Cos* 2>&1 | sed 's/^/     /'
-            cd ../
-        else
-            cp -r $(pwd)/CosmicStaff/AK/1*.zip $(pwd)/output/CosmicStaff-ONEUI-$KV-M31.zip
-            cd $(pwd)/output
-            wget -q https://temp.sh/up.sh
-            chmod +x up.sh
-            echo -e "${RED}"
-            ./up.sh Cos* 2>&1 | sed 's/^/     /'
-            cd ../
-        fi
         if [[ ! -f ${ORIGIN_DIR}/CosmicStaff/AK/Image ]]; then
             echo -e "${RED}"
             script_echo " "
