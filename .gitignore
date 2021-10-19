@@ -178,3 +178,5 @@ scripts/fmp/__pycache__/ELF.cpython-39.pyc
 scripts/fmp/__pycache__/Utils.cpython-39.pyc
 net/wireguard/crypto/zinc/chacha20/chacha20-arm64.S
 net/wireguard/crypto/zinc/poly1305/poly1305-arm64.S
+build-shit
+output/*
