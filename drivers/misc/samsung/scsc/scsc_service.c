@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (c) 2014 - 2018 Samsung Electronics Co., Ltd. All rights reserved
+ *ei Copyright (c) 2014 - 2018 Samsung Electronics Co., Ltd. All rights reserved
  *
  ****************************************************************************/
 
@@ -9,7 +9,11 @@
 #include <linux/version.h>
 #include <linux/firmware.h>
 #ifdef CONFIG_ANDROID
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
+#include <scsc/scsc_wakelock.h>
+#else
 #include <linux/wakelock.h>
+#endif
 #endif
 #include <scsc/scsc_mx.h>
 #include <scsc/scsc_logring.h>
@@ -30,7 +34,7 @@
 #include "servman_messages.h"
 #include "mxmgmt_transport.h"
 
-static ulong sm_completion_timeout_ms = 1000;
+static ulong sm_completion_timeout_ms = 3000;
 module_param(sm_completion_timeout_ms, ulong, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(sm_completion_timeout_ms, "Timeout Service Manager start/stop (ms) - default 1000. 0 = infinite");
 
@@ -64,7 +68,11 @@ void srvman_init(struct srvman *srvman, struct scsc_mx *mx)
 	mutex_init(&srvman->api_access_mutex);
 	mutex_init(&srvman->error_state_mutex);
 #ifdef CONFIG_ANDROID
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0))
 	wake_lock_init(&srvman->sm_wake_lock, WAKE_LOCK_SUSPEND, "srvman_wakelock");
+#else
+	wake_lock_init(NULL, &srvman->sm_wake_lock.ws, "srvman_wakelock");
+#endif
 #endif
 }
 
@@ -463,12 +471,16 @@ void srvman_freeze_services(struct srvman *srvman, struct mx_syserr_decode *syse
 	mxman->notify = false;
 	mutex_lock(&srvman->service_list_mutex);
 	list_for_each_entry(service, &srvman->service_list, list) {
-		if (service->client->stop_on_failure) {
-			service->client->stop_on_failure(service->client);
-			mxman->notify = true;
-		} else if ((service->client->stop_on_failure_v2) &&
-			   (service->client->stop_on_failure_v2(service->client, syserr)))
-			mxman->notify = true;
+#ifndef CONFIG_SCSC_WLAN_FAST_RECOVERY
+	if (service->client->stop_on_failure) {
+		service->client->stop_on_failure(service->client);
+		mxman->notify = true;
+	}
+#else
+	if ((service->client->stop_on_failure_v2) &&
+		(service->client->stop_on_failure_v2(service->client, syserr)))
+		mxman->notify = true;
+#endif
 	}
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 13, 0)
@@ -816,6 +828,7 @@ struct scsc_bt_audio_abox *scsc_mx_service_get_bt_audio_abox(struct scsc_service
 
 	return ptr->aboxram;
 }
+EXPORT_SYMBOL(scsc_mx_service_get_bt_audio_abox);
 
 struct mifabox *scsc_mx_service_get_aboxram(struct scsc_service *service)
 {
@@ -1126,6 +1139,7 @@ u16 scsc_service_get_alignment(struct scsc_service *service)
 
 	return mifsmapper_get_alignment(scsc_mx_get_smapper(mx));
 }
+EXPORT_SYMBOL(scsc_service_get_alignment);
 
 int scsc_service_mifsmapper_alloc_bank(struct scsc_service *service, bool large_bank, u32 entry_size, u16 *entries)
 {
@@ -1185,6 +1199,17 @@ EXPORT_SYMBOL(scsc_service_mifsmapper_get_bank_base_address);
 #endif
 
 #ifdef CONFIG_SCSC_QOS
+int scsc_service_set_affinity_cpu(struct scsc_service *service, u8 cpu)
+{
+	struct scsc_mx      *mx = service->mx;
+	int ret = 0;
+
+	ret = mifqos_set_affinity_cpu(scsc_mx_get_qos(mx), cpu);
+
+	return ret;
+}
+EXPORT_SYMBOL(scsc_service_set_affinity_cpu);
+
 int scsc_service_pm_qos_add_request(struct scsc_service *service, enum scsc_qos_config config)
 {
 	struct scsc_mx      *mx = service->mx;
@@ -1218,7 +1243,7 @@ int scsc_service_pm_qos_remove_request(struct scsc_service *service)
 }
 EXPORT_SYMBOL(scsc_service_pm_qos_remove_request);
 #endif
-#ifdef CONFIG_SCSC_MXLOGGER
+#if IS_ENABLED(CONFIG_SCSC_MXLOGGER)
 /* If there is no service/mxman associated, register the observer as global (will affect all the mx instanes)*/
 /* Users of these functions should ensure that the registers/unregister functions are balanced (i.e. if observer is registed as global,
  * it _has_ to unregister as global) */
@@ -1258,7 +1283,19 @@ EXPORT_SYMBOL(scsc_service_unregister_observer);
 
 int scsc_service_get_panic_record(struct scsc_service *service, u8 *dst, u16 max_size)
 {
-	struct mxman   *mxman = scsc_mx_get_mxman(service->mx);
+	struct mxman   *mxman;
+
+	if (!service) {
+		SCSC_TAG_DEBUG(MXMAN, "Service is NULL");
+		return 0;
+	}
+
+	mxman = scsc_mx_get_mxman(service->mx);
+
+	if (!mxman) {
+		SCSC_TAG_DEBUG(MXMAN, "Mxman is NULL");
+		return 0;
+	}
 
 	/* last_panic_rec_sz is "integer" size, so requires multiplication by 4 to convert into bytes */
 	if ((4 * mxman->last_panic_rec_sz) > max_size) {

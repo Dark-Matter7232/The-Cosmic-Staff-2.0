@@ -14,6 +14,7 @@
 static struct scsc_wlog_ring *the_ring;
 
 u32 cring_lev;
+EXPORT_SYMBOL(cring_lev);
 
 #ifdef CONFIG_SCSC_WIFILOGGER_DEBUGFS
 #include "scsc_wifilogger_debugfs.h"

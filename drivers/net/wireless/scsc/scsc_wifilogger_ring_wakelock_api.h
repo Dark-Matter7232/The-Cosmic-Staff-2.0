@@ -23,7 +23,7 @@ enum {
 	WL_REASON_ROAM
 };
 
-#ifdef CONFIG_SCSC_WIFILOGGER
+#if IS_ENABLED(CONFIG_SCSC_WIFILOGGER)
 
 #include "scsc_wifilogger_ring_wakelock.h"
 
