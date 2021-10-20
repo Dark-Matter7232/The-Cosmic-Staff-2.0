@@ -182,3 +182,4 @@ build-shit
 output/*
 CosmicStaff/*.zip
 CosmicStaff/Image
+arch/arm/vdso/vdsomunge
