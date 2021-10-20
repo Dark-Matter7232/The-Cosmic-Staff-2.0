@@ -720,7 +720,7 @@ export LLVM_AR LLVM_NM
 # Set O3 optimization level for LTO with most linkers
 LDFLAGS		+= -O3
 LDFLAGS		+= --plugin-opt=O3
-LDFLAGS		+= --plugin-opt=-import-instr-limit=20
+LDFLAGS		+= --plugin-opt=-import-instr-limit=30
 else ifdef CONFIG_LTO_GCC
 LDFLAGS_FINAL_vmlinux := -flto=jobserver -fuse-linker-plugin
 LDFLAGS_FINAL_vmlinux += $(filter -g%, $(KBUILD_CFLAGS))
