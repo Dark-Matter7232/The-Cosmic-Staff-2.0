@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- * Copyright (c) 2012 - 2019 Samsung Electronics Co., Ltd. All rights reserved
+ * Copyright (c) 2012 - 2020 Samsung Electronics Co., Ltd. All rights reserved
  *
  *****************************************************************************/
 
@@ -417,6 +417,18 @@ static inline int slsi_str_to_int(char *str, int *result)
 	return i;
 }
 
+static inline int slsi_str_cmp(const char *s1, const char *s2)
+{
+	if (!s1 && !s2)
+		return 0;
+	if (s1 && !s2)
+		return -1;
+	if (!s1 && s2)
+		return 1;
+
+	return strcmp(s1, s2);
+}
+
 #define P80211_OUI_LEN		3
 
 struct ieee80211_snap_hdr {
@@ -531,6 +543,9 @@ static inline int strtoint(const char *s, int *res)
 static inline u8 *slsi_mem_dup(u8 *src, size_t len)
 {
 	u8 *dest;
+
+	if (!src || !len)
+		return NULL;
 
 	dest = kmalloc(len, GFP_KERNEL);
 	if (!dest)

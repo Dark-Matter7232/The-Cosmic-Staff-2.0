@@ -407,7 +407,7 @@ extern bool hip4_sampler_suspend_resume;
 
 /* HIP4 sample headers */
 #define SCSC_HIP4_SAMPLER_HEADER_VERSION_MAJOR	0x01
-#define SCSC_HIP4_SAMPLER_HEADER_VERSION_MINOR	0x00
+#define SCSC_HIP4_SAMPLER_HEADER_VERSION_MINOR	0x01
 
 #define SCSC_HIP4_SAMPLER_RESERVED		(1)
 #define SCSC_HIP4_SAMPLER_RESERVED_2		(10)
@@ -423,6 +423,7 @@ enum scsc_hip4_sampler_type {
 enum scsc_hip4_sampler_platform {
 	SCSC_HIP4_SAMPLER_EXYNOS9610 = 1,
 	SCSC_HIP4_SAMPLER_EXYNOS9630,
+	SCSC_HIP4_SAMPLER_EXYNOS7885,
 	/* Add others */
 	SCSC_HIP4_SAMPLER_UNDEF = 0xffff
 };

@@ -47,7 +47,7 @@
 
 #define MAX_MEMORY              (8 * 1024 * 1024UL) /* maximum memory: this should match MX_DRAM_SIZE_SECTION_1 */
 
-DECLARE_BITMAP(bitmap_minor, SCSC_MAX_INTERFACES);
+static DECLARE_BITMAP(bitmap_minor, SCSC_MAX_INTERFACES);
 
 struct mx_mmap_dev {
 	/* file pointer */
@@ -399,7 +399,7 @@ void client_gdb_remove(struct gdb_transport_client *gdb_client, struct gdb_trans
 }
 
 /* Test client driver registration */
-struct gdb_transport_client client_gdb_driver = {
+static struct gdb_transport_client client_gdb_driver = {
 	.name = "GDB client driver",
 	.probe = client_gdb_probe,
 	.remove = client_gdb_remove,

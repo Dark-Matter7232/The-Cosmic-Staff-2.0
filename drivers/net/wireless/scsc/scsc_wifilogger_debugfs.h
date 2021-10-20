@@ -26,8 +26,6 @@
 #define SCSC_DEBUGFS_ROOT			"/sys/kernel/debug/wifilogger"
 #define SCSC_DEBUGFS_ROOT_DIRNAME		"wifilogger"
 
-extern struct dentry *scsc_wlog_debugfs_global_root;
-
 struct scsc_wlog_debugfs_info {
 	struct dentry *rootdir;
 	struct dentry *ringdir;

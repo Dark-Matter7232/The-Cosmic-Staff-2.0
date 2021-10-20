@@ -13,10 +13,15 @@
 #ifdef CONFIG_SCSC_WLAN_HIP4_PROFILING
 #include "hip4_sampler.h"
 #endif
+#include <linux/fs.h>
 
 #include <scsc/scsc_mx.h>
-#ifdef CONFIG_SCSC_LOG_COLLECTION
+#if IS_ENABLED(CONFIG_SCSC_LOG_COLLECTION)
 #include <scsc/scsc_log_collector.h>
+#endif
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)
+MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
 #endif
 
 static bool EnableTestMode;
@@ -220,26 +225,21 @@ static void wlan_stop_on_failure(struct scsc_service_client *client)
 
 int slsi_check_rf_test_mode(void)
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0)
 	struct file *fp = NULL;
 	int         ret = 0;
-#if defined(SCSC_SEP_VERSION) && SCSC_SEP_VERSION >= 90000
+#if defined(SCSC_SEP_VERSION) && SCSC_SEP_VERSION >= 9
 	char *filepath = "/data/vendor/conn/.psm.info";
 #else
 	char *filepath = "/data/misc/conn/.psm.info";
 #endif
-	char *file_path = "/data/vendor/wifi/rftest.info";
 	char power_val = 0;
 
 	/* reading power value from /data/vendor/conn/.psm.info */
 	fp = filp_open(filepath, O_RDONLY, 0);
 	if (IS_ERR(fp) || (!fp)) {
 		pr_err("%s is not exist.\n", filepath);
-		/* reading power value from /data/vendor/wifi/rftest.info */
-		fp = filp_open(file_path, O_RDONLY, 0);
-		if (IS_ERR(fp) || (!fp)) {
-			pr_err("%s is not exist.\n", file_path);
-			return -ENOENT; /* -2 */
-		}
+		return -ENOENT; /* -2 */
 	}
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
@@ -267,6 +267,9 @@ int slsi_check_rf_test_mode(void)
 	exit:
 		filp_close(fp, NULL);
 		return -EINVAL;
+#else
+		return -ENOENT;
+#endif
 }
 
 /* WLAN service driver registration
@@ -277,7 +280,7 @@ void slsi_wlan_service_probe(struct scsc_mx_module_client *module_client, struct
 	struct slsi_dev            *sdev;
 	struct device              *dev;
 	struct scsc_service_client mx_wlan_client;
-#ifdef CONFIG_SCSC_LOG_COLLECTION
+#if IS_ENABLED(CONFIG_SCSC_LOG_COLLECTION)
 	char buf[SCSC_LOG_FAPI_VERSION_SIZE];
 #endif
 
@@ -337,7 +340,7 @@ void slsi_wlan_service_probe(struct scsc_mx_module_client *module_client, struct
 #ifdef CONFIG_SCSC_WLAN_HIP4_PROFILING
 		hip4_sampler_create(sdev, mx);
 #endif
-#ifdef CONFIG_SCSC_LOG_COLLECTION
+#if IS_ENABLED(CONFIG_SCSC_LOG_COLLECTION)
 		memset(buf, 0, SCSC_LOG_FAPI_VERSION_SIZE);
 		/* Write FAPI VERSION to collector header */
 		/* IMPORTANT - Do not change the formatting as User space tooling is parsing the string
@@ -489,7 +492,7 @@ static void slsi_hip_block_bh(struct slsi_dev *sdev)
 	atomic_set(&sdev->hip.hip_state, SLSI_HIP_STATE_BLOCKED);
 }
 
-struct scsc_mx_module_client wlan_driver = {
+static struct scsc_mx_module_client wlan_driver = {
 	.name = "WLAN driver",
 	.probe = slsi_wlan_service_probe,
 	.remove = slsi_wlan_service_remove,
@@ -564,6 +567,7 @@ int slsi_sm_recovery_service_stop(struct slsi_dev *sdev)
 
 	mutex_lock(&slsi_start_mutex);
 	SLSI_INFO_NODEV("Stopping WLAN service\n");
+	sdev->wlan_service_on = 0;
 	atomic_set(&sdev->cm_if.cm_if_state, SCSC_WIFI_CM_IF_STATE_STOPPING);
 	err = scsc_mx_service_stop(sdev->service);
 	if (err == -EILSEQ || err == -EIO)
@@ -628,7 +632,7 @@ int slsi_sm_recovery_service_start(struct slsi_dev *sdev)
 #ifdef CONFIG_SCSC_PCIE
 	err = scsc_mx_service_mifram_alloc(sdev->service, 1.5 * 1024 * 1024, &sdev->hip4_inst.hip_ref, 4096);
 #else
-	err = scsc_mx_service_mifram_alloc(sdev->service, 2 * 1024 * 1024, &sdev->hip4_inst.hip_ref, 4096);
+	err = scsc_mx_service_mifram_alloc(sdev->service, 2.5 * 1024 * 1024, &sdev->hip4_inst.hip_ref, 4096);
 #endif
 	if (err) {
 		SLSI_WARN(sdev, "scsc_mx_service_mifram_alloc failed err: %d\n", err);
@@ -761,7 +765,7 @@ int slsi_sm_wlan_service_start(struct slsi_dev *sdev)
 #ifdef CONFIG_SCSC_PCIE
 	err = scsc_mx_service_mifram_alloc(sdev->service, 1.5 * 1024 * 1024, &sdev->hip4_inst.hip_ref, 4096);
 #else
-	err = scsc_mx_service_mifram_alloc(sdev->service, 2 * 1024 * 1024, &sdev->hip4_inst.hip_ref, 4096);
+	err = scsc_mx_service_mifram_alloc(sdev->service, 2.5 * 1024 * 1024, &sdev->hip4_inst.hip_ref, 4096);
 #endif
 	if (err) {
 		SLSI_WARN(sdev, "scsc_mx_service_mifram_alloc failed err: %d\n", err);
@@ -839,6 +843,7 @@ int slsi_sm_wlan_service_start(struct slsi_dev *sdev)
 		return err2;
 	}
 	atomic_set(&sdev->cm_if.cm_if_state, SCSC_WIFI_CM_IF_STATE_STARTED);
+	sdev->wlan_service_on = 1;
 	mutex_unlock(&slsi_start_mutex);
 	return 0;
 }
@@ -957,6 +962,7 @@ void slsi_sm_wlan_service_close(struct slsi_dev *sdev)
 	int cm_if_state, r;
 
 	mutex_lock(&slsi_start_mutex);
+	sdev->wlan_service_on = 0;
 	cm_if_state = atomic_read(&sdev->cm_if.cm_if_state);
 	if (cm_if_state != SCSC_WIFI_CM_IF_STATE_STOPPED) {
 		SLSI_INFO(sdev, "Service not stopped. cm_if_state = %d\n", cm_if_state);

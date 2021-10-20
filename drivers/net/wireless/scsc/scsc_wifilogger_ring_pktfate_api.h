@@ -12,7 +12,7 @@
  *
  */
 
-#ifdef CONFIG_SCSC_WIFILOGGER
+#if IS_ENABLED(CONFIG_SCSC_WIFILOGGER)
 #include "scsc_wifilogger_ring_pktfate.h"
 
 #define SCSC_WLOG_PKTFATE_NEW_ASSOC()	\

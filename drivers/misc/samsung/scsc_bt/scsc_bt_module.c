@@ -22,7 +22,11 @@
 #include <linux/proc_fs.h>
 #include <asm/io.h>
 #include <asm/termios.h>
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
+#include <scsc/scsc_wakelock.h>
+#else
 #include <linux/wakelock.h>
+#endif
 #include <linux/delay.h>
 #include <linux/seq_file.h>
 #include <linux/ctype.h>
@@ -2147,7 +2151,7 @@ static int scsc_btlog_enables_set_param_cb(const char *buffer,
 		 * by copying the remaining part of the string plus a null
 		 * terminator, to a temporary buffer.
 		 */
-		char btlog_enables_buf[SCSC_BTLOG_BUF_LEN + newline_len];
+		char btlog_enables_buf[SCSC_BTLOG_BUF_LEN + 1];
 
 		u32 start_index = buffer_len - SCSC_BTLOG_BUF_MAX_CHAR_TO_COPY - newline_len;
 
@@ -2394,6 +2398,7 @@ static int __init scsc_bt_module_init(void)
 	init_waitqueue_head(&bt_service.read_wait);
 	init_waitqueue_head(&bt_service.info_wait);
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0))
 	wake_lock_init(&bt_service.read_wake_lock,
 		       WAKE_LOCK_SUSPEND,
 		       "bt_read_wake_lock");
@@ -2417,7 +2422,25 @@ static int __init scsc_bt_module_init(void)
 		       WAKE_LOCK_SUSPEND,
 		       "ant_service_wake_lock");
 #endif
+#else
+        wake_lock_init(NULL, &bt_service.read_wake_lock.ws,
+                       "bt_read_wake_lock");
+        wake_lock_init(NULL, &bt_service.write_wake_lock.ws,
+                       "bt_write_wake_lock");
+        wake_lock_init(NULL, &bt_service.service_wake_lock.ws,
+                       "bt_service_wake_lock");
 
+#ifdef CONFIG_SCSC_ANT
+        init_waitqueue_head(&ant_service.read_wait);
+
+        wake_lock_init(NULL, &ant_service.read_wake_lock.ws,
+                       "ant_read_wake_lock");
+        wake_lock_init(NULL, &ant_service.write_wake_lock.ws,
+                       "ant_write_wake_lock");
+        wake_lock_init(NULL, &ant_service.service_wake_lock.ws,
+                       "ant_service_wake_lock");
+#endif
+#endif
 	procfs_dir = proc_mkdir("driver/scsc_bt", NULL);
 	if (NULL != procfs_dir) {
 		proc_create_data("stats", S_IRUSR | S_IRGRP,
