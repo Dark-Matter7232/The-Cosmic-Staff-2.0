@@ -28,7 +28,7 @@ export_env_vars() {
     export PATH="/usr/lib/ccache/bin/:$PATH"
     export CCACHE_SLOPPINESS="file_macro,locale,time_macros"
     export CCACHE_NOHASHDIR="true"
-    export CCACHE_DIR=/mnt/45A15FA43FC33C00/Kernel-Dev/ccache
+    export CCACHE_DIR=/mnt/45A15FA43FC33C00/Kernel-Dev/ccache-2
     export CROSS_COMPILE=aarch64-linux-gnu-
     export CROSS_COMPILE_ARM32=arm-linux-gnueabi-
     export CC=${BUILD_PREF_COMPILER}
